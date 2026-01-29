@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import * as audioService from '../services/audio';
 
 export interface Song {
   id: string;
@@ -44,6 +45,7 @@ interface MusicContextType {
   currentSong: Song | null;
   isPlaying: boolean;
   progress: number;
+  duration: number;
   isDarkMode: boolean;
   hasScanned: boolean;
   skipShortAudio: boolean;
@@ -75,6 +77,12 @@ interface MusicContextType {
   clearQueue: () => void;
   playNext: () => void;
   playPrevious: () => void;
+  playFromQueue: (index: number) => void;
+  playWithQueue: (song: Song, songList: Song[]) => void;
+  setSongs: (songs: Song[]) => void;
+  setAlbums: (albums: Album[]) => void;
+  setArtists: (artists: Artist[]) => void;
+  setHasScanned: (scanned: boolean) => void;
 }
 
 const MusicContext = createContext<MusicContextType | undefined>(undefined);
@@ -86,7 +94,8 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [progress, setProgressState] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [hasScanned, setHasScanned] = useState(false);
   const [skipShortAudio, setSkipShortAudio] = useState(true);
@@ -97,15 +106,109 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
   const [queue, setQueue] = useState<Song[]>([]);
   const [currentQueueIndex, setCurrentQueueIndex] = useState(0);
 
-  const playSong = (song: Song) => {
+  // 监听音频时间更新
+  useEffect(() => {
+    const unsubscribeTime = audioService.onTimeUpdate((time) => {
+      setProgressState(time);
+    });
+
+    const unsubscribeEnded = audioService.onEnded(() => {
+      // 播放结束，自动播放下一首
+      if (queue.length > 0) {
+        const nextIndex = (currentQueueIndex + 1) % queue.length;
+        setCurrentQueueIndex(nextIndex);
+        playSongInternal(queue[nextIndex]);
+      } else {
+        setIsPlaying(false);
+      }
+    });
+
+    const unsubscribeError = audioService.onError((error) => {
+      console.error('Audio error:', error);
+      setIsPlaying(false);
+    });
+
+    return () => {
+      unsubscribeTime();
+      unsubscribeEnded();
+      unsubscribeError();
+    };
+  }, [queue, currentQueueIndex]);
+
+  // 内部播放函数
+  const playSongInternal = useCallback(async (song: Song) => {
+    // 先更新 UI 状态
     setCurrentSong(song);
     setIsPlaying(true);
-    setProgress(0);
-  };
+    setProgressState(0);
+    setDuration(song.duration);
 
-  const togglePlay = () => {
-    setIsPlaying(!isPlaying);
-  };
+    // 如果没有文件路径，只更新 UI，不播放音频
+    if (!song.filePath) {
+      console.warn('No file path for song:', song.title);
+      return;
+    }
+
+    try {
+      await audioService.play(song.filePath);
+      // 获取实际时长
+      const state = audioService.getState();
+      if (state.duration > 0) {
+        setDuration(state.duration);
+      }
+    } catch (error) {
+      console.error('Failed to play song:', error);
+      setIsPlaying(false);
+    }
+  }, []);
+
+  const playSong = useCallback((song: Song) => {
+    playSongInternal(song);
+  }, [playSongInternal]);
+
+  const togglePlay = useCallback(async () => {
+    console.log('togglePlay called, isPlaying:', isPlaying, 'currentSong:', currentSong?.title);
+
+    if (isPlaying) {
+      audioService.pause();
+      setIsPlaying(false);
+    } else {
+      // 如果有当前歌曲但没有在播放，尝试播放
+      if (currentSong) {
+        try {
+          const state = audioService.getState();
+          console.log('Audio state:', state, 'filePath:', currentSong.filePath);
+
+          if (currentSong.filePath) {
+            // 检查是否需要加载音频（没有源或源文件不同）
+            const currentPath = audioService.getCurrentFilePath();
+            if (!state.hasSource || currentPath !== currentSong.filePath) {
+              // 音频未加载或文件不同，需要重新播放
+              console.log('Playing from file:', currentSong.filePath);
+              await audioService.play(currentSong.filePath);
+            } else {
+              // 音频已加载，恢复播放
+              console.log('Resuming playback');
+              await audioService.resume();
+            }
+            setIsPlaying(true);
+          } else {
+            console.warn('No filePath for current song');
+          }
+        } catch (error) {
+          console.error('Failed to play/resume:', error);
+          setIsPlaying(false);
+        }
+      } else {
+        console.log('No currentSong to play');
+      }
+    }
+  }, [isPlaying, currentSong]);
+
+  const setProgress = useCallback((value: number) => {
+    audioService.seek(value);
+    setProgressState(value);
+  }, []);
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
@@ -132,98 +235,21 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
         duration: 223,
         isSQ: true,
       },
-      {
-        id: '3',
-        title: '告白气球',
-        artist: '周杰伦',
-        album: '周杰伦的床边故事',
-        coverUrl: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=400',
-        duration: 212,
-      },
-      {
-        id: '4',
-        title: 'Bohemian Rhapsody',
-        artist: 'Queen',
-        album: 'A Night at the Opera',
-        coverUrl: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400',
-        duration: 354,
-        isHR: true,
-        isSQ: true,
-      },
-      {
-        id: '5',
-        title: 'Imagine',
-        artist: 'John Lennon',
-        album: 'Imagine',
-        coverUrl: 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=400',
-        duration: 183,
-      },
     ];
-    
-    const mockAlbums: Album[] = [
-      {
-        id: '1',
-        name: '叶惠美',
-        artist: '周杰伦',
-        coverUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400',
-        songCount: 1,
-        year: 2003,
-      },
-      {
-        id: '2',
-        name: '魔杰座',
-        artist: '周杰伦',
-        coverUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400',
-        songCount: 1,
-        year: 2008,
-      },
-      {
-        id: '3',
-        name: 'A Night at the Opera',
-        artist: 'Queen',
-        coverUrl: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400',
-        songCount: 1,
-        year: 1975,
-      },
-    ];
-    
-    const mockArtists: Artist[] = [
-      {
-        id: '1',
-        name: '周杰伦',
-        coverUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400',
-        songCount: 3,
-      },
-      {
-        id: '2',
-        name: 'Queen',
-        coverUrl: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400',
-        songCount: 1,
-      },
-      {
-        id: '3',
-        name: 'John Lennon',
-        coverUrl: 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=400',
-        songCount: 1,
-      },
-    ];
-    
+
     setSongs(mockSongs);
-    setAlbums(mockAlbums);
-    setArtists(mockArtists);
     setHasScanned(true);
   };
 
-  const shufflePlay = (songsToShuffle?: Song[]) => {
+  const shufflePlay = useCallback((songsToShuffle?: Song[]) => {
     const targetSongs = songsToShuffle || songs;
     if (targetSongs.length > 0) {
-      // 随机打乱并添加到队列
       const shuffled = [...targetSongs].sort(() => Math.random() - 0.5);
       setQueue(shuffled);
       setCurrentQueueIndex(0);
-      playSong(shuffled[0]);
+      playSongInternal(shuffled[0]);
     }
-  };
+  }, [songs, playSongInternal]);
 
   const createPlaylist = (name: string) => {
     const newPlaylist: Playlist = {
@@ -261,35 +287,61 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
     })));
   };
 
-  const addToQueue = (songs: Song[]) => {
-    setQueue([...queue, ...songs]);
-  };
+  const addToQueue = useCallback((newSongs: Song[]) => {
+    setQueue(prev => [...prev, ...newSongs]);
+  }, []);
 
-  const addNextToQueue = (song: Song) => {
-    setQueue([...queue.slice(0, currentQueueIndex + 1), song, ...queue.slice(currentQueueIndex + 1)]);
-  };
+  const addNextToQueue = useCallback((song: Song) => {
+    setQueue(prev => [...prev.slice(0, currentQueueIndex + 1), song, ...prev.slice(currentQueueIndex + 1)]);
+  }, [currentQueueIndex]);
 
-  const removeFromQueue = (index: number) => {
-    setQueue(queue.filter((_, i) => i !== index));
-  };
+  const removeFromQueue = useCallback((index: number) => {
+    setQueue(prev => prev.filter((_, i) => i !== index));
+    if (index < currentQueueIndex) {
+      setCurrentQueueIndex(prev => prev - 1);
+    }
+  }, [currentQueueIndex]);
 
-  const clearQueue = () => {
+  const clearQueue = useCallback(() => {
     setQueue([]);
-  };
+    setCurrentQueueIndex(0);
+  }, []);
 
-  const playNext = () => {
+  const playNext = useCallback(() => {
     if (queue.length === 0) return;
     const nextIndex = (currentQueueIndex + 1) % queue.length;
     setCurrentQueueIndex(nextIndex);
-    playSong(queue[nextIndex]);
-  };
+    playSongInternal(queue[nextIndex]);
+  }, [queue, currentQueueIndex, playSongInternal]);
 
-  const playPrevious = () => {
+  const playPrevious = useCallback(() => {
     if (queue.length === 0) return;
     const prevIndex = (currentQueueIndex - 1 + queue.length) % queue.length;
     setCurrentQueueIndex(prevIndex);
-    playSong(queue[prevIndex]);
-  };
+    playSongInternal(queue[prevIndex]);
+  }, [queue, currentQueueIndex, playSongInternal]);
+
+  const playFromQueue = useCallback((index: number) => {
+    if (index < 0 || index >= queue.length) return;
+    setCurrentQueueIndex(index);
+    playSongInternal(queue[index]);
+  }, [queue, playSongInternal]);
+
+  const playWithQueue = useCallback((song: Song, songList: Song[]) => {
+    // 找到歌曲在列表中的索引
+    const index = songList.findIndex(s => s.id === song.id);
+    if (index !== -1) {
+      setQueue(songList);
+      setCurrentQueueIndex(index);
+      playSongInternal(song);
+    } else {
+      // 如果歌曲不在列表中，将其添加到列表末尾
+      const newQueue = [...songList, song];
+      setQueue(newQueue);
+      setCurrentQueueIndex(newQueue.length - 1);
+      playSongInternal(song);
+    }
+  }, [playSongInternal]);
 
   return (
     <MusicContext.Provider
@@ -301,6 +353,7 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
         currentSong,
         isPlaying,
         progress,
+        duration,
         isDarkMode,
         hasScanned,
         skipShortAudio,
@@ -332,6 +385,12 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
         clearQueue,
         playNext,
         playPrevious,
+        playFromQueue,
+        playWithQueue,
+        setSongs,
+        setAlbums,
+        setArtists,
+        setHasScanned,
       }}
     >
       {children}

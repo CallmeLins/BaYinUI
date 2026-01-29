@@ -10,7 +10,7 @@ type SortOption = 'title' | 'artist' | 'album' | 'duration' | 'size' | 'date';
 
 export const SongsPage = () => {
   const navigate = useNavigate();
-  const { songs, hasScanned, shufflePlay, isDarkMode, playlists, playSong, createPlaylist, addSongsToPlaylist, deleteSongs } = useMusic();
+  const { songs, hasScanned, shufflePlay, isDarkMode, playlists, playWithQueue, createPlaylist, addSongsToPlaylist, deleteSongs } = useMusic();
   const [sortBy, setSortBy] = useState<SortOption>('title');
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
@@ -102,9 +102,10 @@ export const SongsPage = () => {
 
   const handlePlaySelected = () => {
     if (selectedSongs.size > 0) {
-      const firstSelectedSong = songs.find(s => selectedSongs.has(s.id));
-      if (firstSelectedSong) {
-        playSong(firstSelectedSong);
+      // 获取选中的歌曲列表
+      const selectedSongList = songs.filter(s => selectedSongs.has(s.id));
+      if (selectedSongList.length > 0) {
+        playWithQueue(selectedSongList[0], selectedSongList);
       }
     }
   };

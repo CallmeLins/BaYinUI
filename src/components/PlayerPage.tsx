@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { ChevronDown, MoreVertical, Heart, Shuffle, SkipBack, Play, Pause, SkipForward, Repeat, Clock, List, Repeat1 } from 'lucide-react';
 import { useMusic } from '../context/MusicContext';
+import { getLyrics, parseLrcLyrics, type LyricLine } from '../services/scanner';
 
 type PlayMode = 'shuffle' | 'sequence' | 'repeat-one';
 
@@ -11,6 +12,7 @@ export const PlayerPage = () => {
     currentSong,
     isPlaying,
     progress,
+    duration,
     togglePlay,
     setProgress,
     isDarkMode,
@@ -23,7 +25,8 @@ export const PlayerPage = () => {
     removeFromQueue,
     clearQueue,
     playNext,
-    playPrevious
+    playPrevious,
+    playFromQueue
   } = useMusic();
   const [playMode, setPlayMode] = useState<PlayMode>('sequence');
   const [timerMenuOpen, setTimerMenuOpen] = useState(false);
@@ -32,48 +35,48 @@ export const PlayerPage = () => {
   const [selectedTimer, setSelectedTimer] = useState<number | null>(null);
   const [extendToEnd, setExtendToEnd] = useState(false);
   const [showLyrics, setShowLyrics] = useState(false);
+  const [lyrics, setLyrics] = useState<LyricLine[]>([]);
 
   const pageRef = useRef<HTMLDivElement>(null);
-  const lyricsContainerRef = useRef<HTMLDivElement>(null);
-  const desktopLyricsContainerRef = useRef<HTMLDivElement>(null);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [touchEndX, setTouchEndX] = useState<number | null>(null);
 
-  // 模拟歌词
-  const lyrics = [
-    { time: 0, text: '从前从前有个人爱你很久' },
-    { time: 5, text: '但偏偏风渐渐把距离吹得好远' },
-    { time: 10, text: '好不容易又能再多爱一天' },
-    { time: 15, text: '但故事的最后你好像还是说了拜拜' },
-    { time: 20, text: '从前从前有个人爱你很久' },
-    { time: 25, text: '但偏偏风渐渐把距离吹得好远' },
-    { time: 30, text: '好不容易又能再多爱一天' },
-    { time: 35, text: '但故事的最后你好像还是说了拜拜' },
-  ];
+  // 加载歌词
+  useEffect(() => {
+    const loadLyrics = async () => {
+      if (!currentSong?.filePath) {
+        setLyrics([]);
+        return;
+      }
+
+      try {
+        const lrcContent = await getLyrics(currentSong.filePath);
+        if (lrcContent) {
+          const parsed = parseLrcLyrics(lrcContent);
+          setLyrics(parsed);
+        } else {
+          setLyrics([]);
+        }
+      } catch (error) {
+        console.error('Failed to load lyrics:', error);
+        setLyrics([]);
+      }
+    };
+
+    loadLyrics();
+  }, [currentSong?.filePath]);
 
   const currentLyricIndex = lyrics.findIndex((lyric, index) => {
     const nextLyric = lyrics[index + 1];
     return progress >= lyric.time && (!nextLyric || progress < nextLyric.time);
   });
 
-  // 自动滚动歌词到中间
-  useEffect(() => {
-    if (currentLyricIndex < 0) return;
-
-    [lyricsContainerRef.current, desktopLyricsContainerRef.current].forEach(container => {
-      if (!container) return;
-      const el = container.querySelector(`[data-lyric-index="${currentLyricIndex}"]`);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    });
-  }, [currentLyricIndex, showLyrics]);
-
   const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+    const totalSeconds = Math.floor(seconds);
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
@@ -288,11 +291,12 @@ export const PlayerPage = () => {
           {queue.map((song, index) => (
             <div
               key={index}
-              className={`flex items-center gap-3 px-4 py-3 border-b ${
+              className={`flex items-center gap-3 px-4 py-3 border-b cursor-pointer ${
                 index === currentQueueIndex
                   ? isDarkMode ? 'bg-blue-900 bg-opacity-30 border-blue-700' : 'bg-blue-50 border-blue-200'
-                  : isDarkMode ? 'border-gray-700' : 'border-gray-100'
+                  : isDarkMode ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-100 hover:bg-gray-50'
               }`}
+              onClick={() => playFromQueue(index)}
             >
               <div className="flex-1 min-w-0">
                 <div className={`font-medium truncate ${index === currentQueueIndex ? 'text-blue-500' : ''}`}>
@@ -303,7 +307,10 @@ export const PlayerPage = () => {
                 </div>
               </div>
               <button
-                onClick={() => handleRemoveFromQueue(index)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRemoveFromQueue(index);
+                }}
                 className={`p-2 ${isDarkMode ? 'text-red-400 hover:bg-gray-800' : 'text-red-600 hover:bg-gray-100'} rounded`}
               >
                 <span className="text-xl">−</span>
@@ -377,49 +384,61 @@ export const PlayerPage = () => {
 
                     {/* Preview Lyrics (3 lines) */}
                     <div className="h-24 flex flex-col items-center justify-center">
-                      {lyrics.slice(Math.max(0, currentLyricIndex - 1), currentLyricIndex + 2).map((lyric, idx) => {
-                        const actualIndex = Math.max(0, currentLyricIndex - 1) + idx;
-                        return (
-                          <p
-                            key={actualIndex}
-                            className={`text-center transition-all duration-300 py-1 ${
-                              idx === 1
-                                ? 'text-base font-medium'
-                                : isDarkMode ? 'text-sm text-gray-400' : 'text-sm text-gray-500'
-                            }`}
-                          >
-                            {lyric.text}
-                          </p>
-                        );
-                      })}
+                      {lyrics.length > 0 ? (
+                        lyrics.slice(Math.max(0, currentLyricIndex - 1), currentLyricIndex + 2).map((lyric, idx) => {
+                          const actualIndex = Math.max(0, currentLyricIndex - 1) + idx;
+                          return (
+                            <p
+                              key={actualIndex}
+                              className={`text-center transition-all duration-300 py-1 ${
+                                idx === 1
+                                  ? 'text-base font-medium'
+                                  : isDarkMode ? 'text-sm text-gray-400' : 'text-sm text-gray-500'
+                              }`}
+                            >
+                              {lyric.text}
+                            </p>
+                          );
+                        })
+                      ) : (
+                        <p className={`text-center ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                          暂无歌词
+                        </p>
+                      )}
                     </div>
                   </>
                 ) : (
-                  <div className="relative h-[50vh]">
-                    <div
-                      ref={lyricsContainerRef}
-                      className="h-full overflow-y-auto scrollbar-hide py-[25vh]"
-                    >
-                      {lyrics.map((lyric, index) => {
-                        const distance = Math.abs(index - currentLyricIndex);
-                        const opacity = distance === 0 ? 1 : Math.max(0.1, 1 - distance * 0.25);
-                        return (
-                          <p
-                            key={index}
-                            data-lyric-index={index}
-                            className="text-center transition-all duration-300 py-4 text-xl leading-relaxed"
-                            style={{
-                              color: isDarkMode
-                                ? `rgba(255, 255, 255, ${opacity})`
-                                : `rgba(0, 0, 0, ${opacity})`,
-                              fontWeight: distance === 0 ? 700 : 400,
-                            }}
-                          >
-                            {lyric.text}
-                          </p>
-                        );
-                      })}
-                    </div>
+                  <div className="relative h-[50vh] flex flex-col items-center justify-center">
+                    {lyrics.length > 0 ? (
+                      <>
+                        {/* 只显示当前歌词前后几行 */}
+                        {lyrics.slice(Math.max(0, currentLyricIndex - 3), currentLyricIndex + 4).map((lyric, idx) => {
+                          const actualIndex = Math.max(0, currentLyricIndex - 3) + idx;
+                          const distance = Math.abs(actualIndex - currentLyricIndex);
+                          const opacity = distance === 0 ? 1 : Math.max(0.2, 1 - distance * 0.25);
+                          return (
+                            <p
+                              key={actualIndex}
+                              data-lyric-index={actualIndex}
+                              className="text-center transition-all duration-500 py-3 text-xl leading-relaxed"
+                              style={{
+                                color: isDarkMode
+                                  ? `rgba(255, 255, 255, ${opacity})`
+                                  : `rgba(0, 0, 0, ${opacity})`,
+                                fontWeight: distance === 0 ? 700 : 400,
+                                transform: distance === 0 ? 'scale(1.1)' : 'scale(1)',
+                              }}
+                            >
+                              {lyric.text}
+                            </p>
+                          );
+                        })}
+                      </>
+                    ) : (
+                      <p className={`text-center ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                        暂无歌词
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -436,31 +455,37 @@ export const PlayerPage = () => {
                 </div>
 
                 {/* Right: Full lyrics */}
-                <div className="relative h-[500px]">
-                  <div
-                    ref={desktopLyricsContainerRef}
-                    className="h-full overflow-y-auto scrollbar-hide py-[200px]"
-                  >
-                    {lyrics.map((lyric, index) => {
-                      const distance = Math.abs(index - currentLyricIndex);
-                      const opacity = distance === 0 ? 1 : Math.max(0.1, 1 - distance * 0.25);
-                      return (
-                        <p
-                          key={index}
-                          data-lyric-index={index}
-                          className="text-center transition-all duration-300 py-4 text-xl leading-relaxed"
-                          style={{
-                            color: isDarkMode
-                              ? `rgba(255, 255, 255, ${opacity})`
-                              : `rgba(0, 0, 0, ${opacity})`,
-                            fontWeight: distance === 0 ? 700 : 400,
-                          }}
-                        >
-                          {lyric.text}
-                        </p>
-                      );
-                    })}
-                  </div>
+                <div className="relative h-[500px] flex flex-col items-center justify-center">
+                  {lyrics.length > 0 ? (
+                    <>
+                      {/* 只显示当前歌词前后几行 */}
+                      {lyrics.slice(Math.max(0, currentLyricIndex - 4), currentLyricIndex + 5).map((lyric, idx) => {
+                        const actualIndex = Math.max(0, currentLyricIndex - 4) + idx;
+                        const distance = Math.abs(actualIndex - currentLyricIndex);
+                        const opacity = distance === 0 ? 1 : Math.max(0.2, 1 - distance * 0.2);
+                        return (
+                          <p
+                            key={actualIndex}
+                            data-lyric-index={actualIndex}
+                            className="text-center transition-all duration-500 py-3 text-xl leading-relaxed"
+                            style={{
+                              color: isDarkMode
+                                ? `rgba(255, 255, 255, ${opacity})`
+                                : `rgba(0, 0, 0, ${opacity})`,
+                              fontWeight: distance === 0 ? 700 : 400,
+                              transform: distance === 0 ? 'scale(1.1)' : 'scale(1)',
+                            }}
+                          >
+                            {lyric.text}
+                          </p>
+                        );
+                      })}
+                    </>
+                  ) : (
+                    <p className={`text-center ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                      暂无歌词
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -470,15 +495,15 @@ export const PlayerPage = () => {
               <input
                 type="range"
                 min="0"
-                max={currentSong.duration}
+                max={duration || currentSong.duration}
                 value={progress}
                 onChange={handleProgressChange}
                 className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                 style={{
                   background: `linear-gradient(to right, ${isDarkMode ? '#3b82f6' : '#2563eb'} 0%, ${
                     isDarkMode ? '#3b82f6' : '#2563eb'
-                  } ${(progress / currentSong.duration) * 100}%, ${isDarkMode ? '#374151' : '#e5e7eb'} ${
-                    (progress / currentSong.duration) * 100
+                  } ${(progress / (duration || currentSong.duration)) * 100}%, ${isDarkMode ? '#374151' : '#e5e7eb'} ${
+                    (progress / (duration || currentSong.duration)) * 100
                   }%, ${isDarkMode ? '#374151' : '#e5e7eb'} 100%)`,
                 }}
               />
@@ -487,21 +512,27 @@ export const PlayerPage = () => {
                   {formatDuration(progress)}
                 </span>
                 <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                  {formatDuration(currentSong.duration)}
+                  {formatDuration(duration || currentSong.duration)}
                 </span>
               </div>
             </div>
 
             {/* Controls */}
-            <div className="flex items-center justify-center gap-6 mb-8">
+            <div className="flex items-center justify-center gap-6 mb-8" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
               <button
-                onClick={playPrevious}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  playPrevious();
+                }}
                 className={`p-3 ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'} hover:bg-opacity-50 rounded-full`}
               >
                 <SkipBack className="w-8 h-8" />
               </button>
               <button
-                onClick={togglePlay}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  togglePlay();
+                }}
                 className={`p-5 ${
                   isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'
                 } rounded-full text-white shadow-lg`}
@@ -509,7 +540,10 @@ export const PlayerPage = () => {
                 {isPlaying ? <Pause className="w-10 h-10" /> : <Play className="w-10 h-10 ml-1" />}
               </button>
               <button
-                onClick={playNext}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  playNext();
+                }}
                 className={`p-3 ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'} hover:bg-opacity-50 rounded-full`}
               >
                 <SkipForward className="w-8 h-8" />

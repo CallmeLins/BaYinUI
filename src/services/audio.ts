@@ -10,10 +10,13 @@ export interface AudioState {
   currentTime: number;
   duration: number;
   volume: number;
+  hasSource: boolean;
 }
 
 // 单例 Audio 元素
 let audioElement: HTMLAudioElement | null = null;
+// 缓存当前加载的文件路径
+let currentFilePath: string | null = null;
 
 function getAudioElement(): HTMLAudioElement {
   if (!audioElement) {
@@ -27,8 +30,17 @@ function getAudioElement(): HTMLAudioElement {
  */
 export async function getPlayableUrl(filePath: string): Promise<string> {
   if (isTauri()) {
-    const { convertFileSrc } = await import('@tauri-apps/api/core');
-    return convertFileSrc(filePath);
+    try {
+      const { convertFileSrc } = await import('@tauri-apps/api/core');
+      // 确保路径格式正确（Windows 路径）
+      const normalizedPath = filePath.replace(/\\/g, '/');
+      const url = convertFileSrc(normalizedPath);
+      console.log('convertFileSrc result:', url);
+      return url;
+    } catch (error) {
+      console.error('convertFileSrc failed:', error);
+      throw error;
+    }
   }
 
   mockLog('audio', 'getPlayableUrl', filePath);
@@ -41,13 +53,43 @@ export async function getPlayableUrl(filePath: string): Promise<string> {
  */
 export async function play(filePath: string): Promise<void> {
   const audio = getAudioElement();
-  const url = await getPlayableUrl(filePath);
 
-  if (audio.src !== url) {
+  // 只有当文件路径改变时才重新加载
+  if (currentFilePath !== filePath) {
+    const url = await getPlayableUrl(filePath);
+    console.log('Loading audio:', filePath, '->', url);
+
+    // 创建一个 Promise 来等待音频加载
+    const loadPromise = new Promise<void>((resolve, reject) => {
+      const onCanPlay = () => {
+        audio.removeEventListener('canplay', onCanPlay);
+        audio.removeEventListener('error', onError);
+        resolve();
+      };
+      const onError = () => {
+        audio.removeEventListener('canplay', onCanPlay);
+        audio.removeEventListener('error', onError);
+        const errorMsg = audio.error?.message || 'Unknown audio error';
+        console.error('Audio load error:', errorMsg);
+        reject(new Error(`无法加载音频: ${errorMsg}`));
+      };
+      audio.addEventListener('canplay', onCanPlay);
+      audio.addEventListener('error', onError);
+    });
+
     audio.src = url;
     audio.load();
+    currentFilePath = filePath;
+
+    // 等待加载完成或超时
+    const timeoutPromise = new Promise<void>((_, reject) => {
+      setTimeout(() => reject(new Error('音频加载超时')), 10000);
+    });
+
+    await Promise.race([loadPromise, timeoutPromise]);
   }
 
+  console.log('Playing audio');
   await audio.play();
 }
 
@@ -56,6 +98,7 @@ export async function play(filePath: string): Promise<void> {
  */
 export function pause(): void {
   const audio = getAudioElement();
+  console.log('Pausing audio');
   audio.pause();
 }
 
@@ -64,6 +107,14 @@ export function pause(): void {
  */
 export async function resume(): Promise<void> {
   const audio = getAudioElement();
+
+  // 检查是否有音频源
+  if (!audio.src || audio.src === '' || audio.src === window.location.href) {
+    console.warn('No audio source to resume');
+    throw new Error('No audio source loaded');
+  }
+
+  console.log('Resuming audio');
   await audio.play();
 }
 
@@ -97,12 +148,23 @@ export function setVolume(volume: number): void {
  */
 export function getState(): AudioState {
   const audio = getAudioElement();
+  const duration = audio.duration;
+  const hasSource = audio.src && audio.src !== '' && audio.src !== window.location.href;
+
   return {
     isPlaying: !audio.paused,
     currentTime: audio.currentTime,
-    duration: audio.duration || 0,
+    duration: isNaN(duration) ? 0 : duration,
     volume: audio.volume,
+    hasSource: !!hasSource,
   };
+}
+
+/**
+ * 获取当前加载的文件路径
+ */
+export function getCurrentFilePath(): string | null {
+  return currentFilePath;
 }
 
 /**

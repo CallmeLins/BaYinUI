@@ -11,7 +11,7 @@ interface SongListProps {
 }
 
 export const SongList = ({ songs, selectionMode = false, selectedSongs = new Set(), onToggleSelection }: SongListProps) => {
-  const { playSong, isDarkMode, showCoverInList } = useMusic();
+  const { playWithQueue, isDarkMode, showCoverInList } = useMusic();
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -19,7 +19,8 @@ export const SongList = ({ songs, selectionMode = false, selectedSongs = new Set
     if (selectionMode && onToggleSelection) {
       onToggleSelection(song.id);
     } else {
-      playSong(song);
+      // 播放歌曲并将当前列表设为播放队列
+      playWithQueue(song, songs);
     }
   };
 
