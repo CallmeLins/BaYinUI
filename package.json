@@ -4,6 +4,11 @@
       "version": "0.1.0",
       "private": true,
       "dependencies": {
+          "@tauri-apps/api": "^2",
+          "@tauri-apps/plugin-dialog": "^2",
+          "@tauri-apps/plugin-fs": "^2",
+          "@tauri-apps/plugin-opener": "^2",
+          "@tauri-apps/plugin-store": "^2",
           "@radix-ui/react-accordion": "^1.2.3",
           "@radix-ui/react-alert-dialog": "^1.1.6",
           "@radix-ui/react-aspect-ratio": "^1.1.2",
