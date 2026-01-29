@@ -30,7 +30,7 @@ export const SongMenu = ({ song, onClose }: SongMenuProps) => {
     >
       <div
         style={{ backgroundColor: isDarkMode ? '#191919' : '#ffffff' }}
-        className="fixed bottom-0 left-0 right-0 rounded-t-3xl p-6 max-h-[70vh] overflow-y-auto shadow-lg"
+        className="fixed bottom-0 left-0 right-0 rounded-t-3xl p-6 max-h-[70vh] overflow-y-auto scrollbar-thin shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Song info */}

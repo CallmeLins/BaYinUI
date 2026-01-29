@@ -354,7 +354,7 @@ export const SongsPage = () => {
           {/* Menu */}
           <div
             style={{ backgroundColor: isDarkMode ? '#191919' : '#ffffff' }}
-            className="fixed bottom-0 left-0 right-0 lg:left-64 rounded-t-3xl p-6 max-h-[70vh] overflow-y-auto z-50 shadow-lg"
+            className="fixed bottom-0 left-0 right-0 lg:left-64 rounded-t-3xl p-6 max-h-[70vh] overflow-y-auto scrollbar-thin z-50 shadow-lg"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-medium mb-4">排序方式</h3>
@@ -437,7 +437,7 @@ export const SongsPage = () => {
           {/* Dialog */}
           <div
             style={{ backgroundColor: isDarkMode ? '#191919' : '#ffffff' }}
-            className="fixed bottom-0 left-0 right-0 lg:left-64 rounded-t-3xl p-6 max-h-[70vh] overflow-y-auto z-50 shadow-lg"
+            className="fixed bottom-0 left-0 right-0 lg:left-64 rounded-t-3xl p-6 max-h-[70vh] overflow-y-auto scrollbar-thin z-50 shadow-lg"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-medium mb-4">添加到歌单</h3>

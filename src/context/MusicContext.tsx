@@ -278,17 +278,17 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const playNext = () => {
-    if (currentQueueIndex < queue.length - 1) {
-      setCurrentQueueIndex(currentQueueIndex + 1);
-      playSong(queue[currentQueueIndex + 1]);
-    }
+    if (queue.length === 0) return;
+    const nextIndex = (currentQueueIndex + 1) % queue.length;
+    setCurrentQueueIndex(nextIndex);
+    playSong(queue[nextIndex]);
   };
 
   const playPrevious = () => {
-    if (currentQueueIndex > 0) {
-      setCurrentQueueIndex(currentQueueIndex - 1);
-      playSong(queue[currentQueueIndex - 1]);
-    }
+    if (queue.length === 0) return;
+    const prevIndex = (currentQueueIndex - 1 + queue.length) % queue.length;
+    setCurrentQueueIndex(prevIndex);
+    playSong(queue[prevIndex]);
   };
 
   return (

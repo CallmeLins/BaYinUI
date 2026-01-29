@@ -31,7 +31,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       {/* Sidebar */}
       <div
         style={{ backgroundColor: isDarkMode ? '#191919' : '#ffffff' }}
-        className={`fixed top-0 left-0 bottom-0 w-64 shadow-lg overflow-y-auto transition-transform duration-300 z-30 ${
+        className={`fixed top-0 left-0 bottom-0 w-64 shadow-lg overflow-y-auto scrollbar-thin transition-transform duration-300 z-30 ${
           shouldShowMobile ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0`}
       >

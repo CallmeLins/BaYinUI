@@ -5,7 +5,7 @@ import { useMusic } from '../context/MusicContext';
 export const PlayerBar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentSong, isPlaying, progress, togglePlay, isDarkMode } = useMusic();
+  const { currentSong, isPlaying, progress, togglePlay, isDarkMode, playPrevious, playNext } = useMusic();
 
   // 在播放页面时不显示底部播放栏
   if (location.pathname === '/player') {
@@ -16,14 +16,12 @@ export const PlayerBar = () => {
 
   const handlePrevious = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // TODO: 实现上一曲功能
-    console.log('Previous track');
+    playPrevious();
   };
 
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // TODO: 实现下一曲功能
-    console.log('Next track');
+    playNext();
   };
 
   return (

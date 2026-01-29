@@ -7,16 +7,16 @@ type PlayMode = 'shuffle' | 'sequence' | 'repeat-one';
 
 export const PlayerPage = () => {
   const navigate = useNavigate();
-  const { 
-    currentSong, 
-    isPlaying, 
-    progress, 
-    togglePlay, 
-    setProgress, 
-    isDarkMode, 
-    playlists, 
-    createPlaylist, 
-    addSongsToPlaylist, 
+  const {
+    currentSong,
+    isPlaying,
+    progress,
+    togglePlay,
+    setProgress,
+    isDarkMode,
+    playlists,
+    createPlaylist,
+    addSongsToPlaylist,
     deleteSongs,
     queue,
     currentQueueIndex,
@@ -32,8 +32,10 @@ export const PlayerPage = () => {
   const [selectedTimer, setSelectedTimer] = useState<number | null>(null);
   const [extendToEnd, setExtendToEnd] = useState(false);
   const [showLyrics, setShowLyrics] = useState(false);
-  
+
   const pageRef = useRef<HTMLDivElement>(null);
+  const lyricsContainerRef = useRef<HTMLDivElement>(null);
+  const desktopLyricsContainerRef = useRef<HTMLDivElement>(null);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
@@ -51,7 +53,23 @@ export const PlayerPage = () => {
     { time: 35, text: '但故事的最后你好像还是说了拜拜' },
   ];
 
-  const currentLyricIndex = Math.floor(progress / 30);
+  const currentLyricIndex = lyrics.findIndex((lyric, index) => {
+    const nextLyric = lyrics[index + 1];
+    return progress >= lyric.time && (!nextLyric || progress < nextLyric.time);
+  });
+
+  // 自动滚动歌词到中间
+  useEffect(() => {
+    if (currentLyricIndex < 0) return;
+
+    [lyricsContainerRef.current, desktopLyricsContainerRef.current].forEach(container => {
+      if (!container) return;
+      const el = container.querySelector(`[data-lyric-index="${currentLyricIndex}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+  }, [currentLyricIndex, showLyrics]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -266,7 +284,7 @@ export const PlayerPage = () => {
         </div>
 
         {/* Queue list */}
-        <div className="overflow-y-auto">
+        <div className="overflow-y-auto scrollbar-thin">
           {queue.map((song, index) => (
             <div
               key={index}
@@ -333,7 +351,7 @@ export const PlayerPage = () => {
         </div>
 
         {/* Main content - scrollable */}
-        <div className="flex-1 overflow-y-auto px-8 py-4">
+        <div className="flex-1 overflow-y-auto scrollbar-thin px-8 py-4">
           <div className="max-w-6xl mx-auto">
             {/* Song info */}
             <div className="text-center mb-6">
@@ -377,20 +395,30 @@ export const PlayerPage = () => {
                     </div>
                   </>
                 ) : (
-                  <div className="relative">
-                    <div className="space-y-6 py-8">
-                      {lyrics.map((lyric, index) => (
-                        <p
-                          key={index}
-                          className={`text-center transition-all duration-300 text-lg leading-relaxed ${
-                            index === currentLyricIndex
-                              ? 'font-medium scale-110 opacity-100'
-                              : 'opacity-40'
-                          }`}
-                        >
-                          {lyric.text}
-                        </p>
-                      ))}
+                  <div className="relative h-[50vh]">
+                    <div
+                      ref={lyricsContainerRef}
+                      className="h-full overflow-y-auto scrollbar-hide py-[25vh]"
+                    >
+                      {lyrics.map((lyric, index) => {
+                        const distance = Math.abs(index - currentLyricIndex);
+                        const opacity = distance === 0 ? 1 : Math.max(0.1, 1 - distance * 0.25);
+                        return (
+                          <p
+                            key={index}
+                            data-lyric-index={index}
+                            className="text-center transition-all duration-300 py-4 text-xl leading-relaxed"
+                            style={{
+                              color: isDarkMode
+                                ? `rgba(255, 255, 255, ${opacity})`
+                                : `rgba(0, 0, 0, ${opacity})`,
+                              fontWeight: distance === 0 ? 700 : 400,
+                            }}
+                          >
+                            {lyric.text}
+                          </p>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -408,22 +436,30 @@ export const PlayerPage = () => {
                 </div>
 
                 {/* Right: Full lyrics */}
-                <div className="relative h-full min-h-[400px] flex items-center">
-                  <div className="w-full max-h-[600px] overflow-y-auto overflow-x-hidden scrollbar-hide">
-                    <div className="space-y-6 py-8">
-                      {lyrics.map((lyric, index) => (
+                <div className="relative h-[500px]">
+                  <div
+                    ref={desktopLyricsContainerRef}
+                    className="h-full overflow-y-auto scrollbar-hide py-[200px]"
+                  >
+                    {lyrics.map((lyric, index) => {
+                      const distance = Math.abs(index - currentLyricIndex);
+                      const opacity = distance === 0 ? 1 : Math.max(0.1, 1 - distance * 0.25);
+                      return (
                         <p
                           key={index}
-                          className={`text-center transition-all duration-300 text-lg leading-relaxed ${
-                            index === currentLyricIndex
-                              ? 'font-medium scale-110 opacity-100'
-                              : 'opacity-40'
-                          }`}
+                          data-lyric-index={index}
+                          className="text-center transition-all duration-300 py-4 text-xl leading-relaxed"
+                          style={{
+                            color: isDarkMode
+                              ? `rgba(255, 255, 255, ${opacity})`
+                              : `rgba(0, 0, 0, ${opacity})`,
+                            fontWeight: distance === 0 ? 700 : 400,
+                          }}
                         >
                           {lyric.text}
                         </p>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

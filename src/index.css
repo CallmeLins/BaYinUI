@@ -1927,3 +1927,58 @@ html {
   syntax: "*";
   inherits: false
 }
+
+/* Custom thin scrollbar - auto hide, only show on scroll */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+/* Webkit browsers (Chrome, Safari, Edge, WebView2) */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 3px;
+}
+
+/* Show scrollbar via JS class */
+.scrollbar-thin.show-scrollbar {
+  scrollbar-color: rgba(155, 155, 155, 0.4) transparent;
+}
+
+.scrollbar-thin.show-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(155, 155, 155, 0.4);
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(155, 155, 155, 0.6);
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:active {
+  background-color: rgba(155, 155, 155, 0.7);
+}
+
+/* Dark mode */
+.dark .scrollbar-thin.show-scrollbar {
+  scrollbar-color: rgba(100, 100, 100, 0.4) transparent;
+}
+
+.dark .scrollbar-thin.show-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 100, 100, 0.4);
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 100, 100, 0.6);
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb:active {
+  background-color: rgba(100, 100, 100, 0.7);
+}
