@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { ChevronLeft, Loader2, CheckCircle, AlertCircle, Server, User, Lock } from 'lucide-react';
+import { ChevronLeft, Loader2, CheckCircle, AlertCircle, Server, User, Lock, Trash2 } from 'lucide-react';
 import { useMusic } from '../context/MusicContext';
 import {
   testNavidromeConnection,
-  fetchNavidromeSongs,
   type NavidromeConfig,
   type ConnectionTestResult,
 } from '../services/navidrome';
-import { save, load } from '../services/storage';
+import { save, load, remove } from '../services/storage';
 import { cn } from '../components/ui/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -16,14 +15,14 @@ const NAVIDROME_CONFIG_KEY = 'navidromeConfig' as const;
 
 export const NavidromeConfigPage = () => {
   const navigate = useNavigate();
-  const { setSongs } = useMusic();
+  const { setSongs, setAlbums, setArtists } = useMusic();
   const [serverUrl, setServerUrl] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [testResult, setTestResult] = useState<ConnectionTestResult | null>(null);
   const [isTesting, setIsTesting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isFetching, setIsFetching] = useState(false);
+  const [hasConfig, setHasConfig] = useState(false);
 
   useEffect(() => {
     const loadConfig = async () => {
@@ -31,6 +30,8 @@ export const NavidromeConfigPage = () => {
       if (config) {
         setServerUrl(config.serverUrl);
         setUsername(config.username);
+        setPassword(config.password || '');
+        setHasConfig(true);
       }
     };
     loadConfig();
@@ -64,19 +65,16 @@ export const NavidromeConfigPage = () => {
 
   const handleSave = async () => {
     const config = getConfig();
-    if (!config.serverUrl || !config.username) {
-      setTestResult({ success: false, message: 'Please fill in server URL and username' });
+    if (!config.serverUrl || !config.username || !config.password) {
+      setTestResult({ success: false, message: 'Please fill in all fields' });
       return;
     }
 
     setIsSaving(true);
     try {
-      await save(NAVIDROME_CONFIG_KEY as never, {
-        serverUrl: config.serverUrl,
-        username: config.username,
-        password: '',
-      });
-      setTestResult({ success: true, message: 'Configuration saved' });
+      await save(NAVIDROME_CONFIG_KEY as never, config);
+      setHasConfig(true);
+      setTestResult({ success: true, message: 'Configuration saved. Go to Scan Music to fetch your library.' });
     } catch (error) {
       setTestResult({ success: false, message: `Save failed: ${error}` });
     } finally {
@@ -84,31 +82,16 @@ export const NavidromeConfigPage = () => {
     }
   };
 
-  const handleFetchSongs = async () => {
-    const config = getConfig();
-    if (!config.serverUrl || !config.username || !config.password) {
-      setTestResult({ success: false, message: 'Please fill in all fields' });
-      return;
-    }
-
-    setIsFetching(true);
-    setTestResult(null);
-
+  const handleClear = async () => {
     try {
-      const songs = await fetchNavidromeSongs(config);
-      setSongs(
-        songs.map((s) => ({
-          ...s,
-          coverUrl: s.coverUrl || '',
-          filePath: JSON.stringify({ type: 'navidrome', songId: s.id, config }),
-        }))
-      );
-      setTestResult({ success: true, message: `Successfully fetched ${songs.length} songs` });
-      setTimeout(() => navigate('/'), 1500);
+      await remove(NAVIDROME_CONFIG_KEY as never);
+      setServerUrl('');
+      setUsername('');
+      setPassword('');
+      setHasConfig(false);
+      setTestResult({ success: true, message: 'Configuration cleared' });
     } catch (error) {
-      setTestResult({ success: false, message: `Fetch failed: ${error}` });
-    } finally {
-      setIsFetching(false);
+      setTestResult({ success: false, message: `Clear failed: ${error}` });
     }
   };
 
@@ -130,11 +113,11 @@ export const NavidromeConfigPage = () => {
 
       {/* Content */}
       <div className="max-w-md mx-auto space-y-6">
-        
+
         {/* Form Card */}
         <div className="bg-white/50 dark:bg-[#1e1e1e]/50 backdrop-blur-md rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden p-6 shadow-sm">
            <div className="space-y-4">
-              
+
               {/* Server URL */}
               <div>
                  <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Server URL</label>
@@ -184,7 +167,6 @@ export const NavidromeConfigPage = () => {
                        className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-black/20 border border-black/10 dark:border-white/10 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                     />
                  </div>
-                 <p className="mt-1.5 text-xs text-gray-400">Password is not saved locally for security.</p>
               </div>
 
               {/* Test Button */}
@@ -205,8 +187,8 @@ export const NavidromeConfigPage = () => {
                        exit={{ opacity: 0, height: 0 }}
                        className={cn(
                           "p-3 rounded-xl text-sm flex items-start gap-2",
-                          testResult.success 
-                             ? "bg-green-500/10 text-green-600 dark:text-green-400" 
+                          testResult.success
+                             ? "bg-green-500/10 text-green-600 dark:text-green-400"
                              : "bg-red-500/10 text-red-600 dark:text-red-400"
                        )}
                     >
@@ -226,18 +208,24 @@ export const NavidromeConfigPage = () => {
         {/* Action Buttons */}
         <div className="flex gap-4">
            <button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="flex-1 py-3 rounded-xl bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 font-medium transition-colors flex items-center justify-center gap-2"
+              onClick={handleClear}
+              disabled={!hasConfig}
+              className={cn(
+                "flex-1 py-3 rounded-xl font-medium transition-colors flex items-center justify-center gap-2",
+                hasConfig
+                  ? "bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400"
+                  : "bg-gray-100 dark:bg-white/5 text-gray-400 cursor-not-allowed"
+              )}
            >
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Config'}
+              <Trash2 className="w-4 h-4" />
+              Clear Config
            </button>
            <button
-              onClick={handleFetchSongs}
-              disabled={isFetching}
+              onClick={handleSave}
+              disabled={isSaving}
               className="flex-1 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-medium transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20"
            >
-              {isFetching ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Fetch Library'}
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Config'}
            </button>
         </div>
 

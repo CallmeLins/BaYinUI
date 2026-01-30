@@ -6,6 +6,7 @@
 import { open } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { isTauri, mockLog, getPlatform, type Platform } from './tauri';
+import { getNavidromeLyrics } from './navidrome';
 
 export interface ScannedSong {
   id: string;
@@ -144,8 +145,21 @@ export async function getMusicMetadata(filePath: string): Promise<ScannedSong | 
 /**
  * 获取歌曲歌词
  * 返回原始歌词文本（LRC 格式或纯文本）
+ * 支持本地文件和 Navidrome 歌曲
  */
 export async function getLyrics(filePath: string): Promise<string | null> {
+  // 检查是否为 Navidrome 歌曲
+  try {
+    const parsed = JSON.parse(filePath);
+    if (parsed && parsed.type === 'navidrome' && parsed.songId && parsed.config) {
+      console.log('Getting Navidrome lyrics for:', parsed.songId);
+      return await getNavidromeLyrics(parsed.config, parsed.songId);
+    }
+  } catch {
+    // 不是 JSON，是普通文件路径
+  }
+
+  // 本地文件
   if (isTauri()) {
     return invoke<string | null>('get_lyrics', { filePath });
   }

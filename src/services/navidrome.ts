@@ -102,3 +102,21 @@ export async function getNavidromeStreamUrl(
   mockLog('navidrome', 'getStreamUrl', songId);
   return `https://mock-server.com/rest/stream?id=${songId}`;
 }
+
+/**
+ * 获取 Navidrome 歌曲歌词
+ */
+export async function getNavidromeLyrics(
+  config: NavidromeConfig,
+  songId: string
+): Promise<string | null> {
+  if (isTauri()) {
+    const { invoke } = await import('@tauri-apps/api/core');
+    return invoke<string | null>('get_navidrome_lyrics', { config, songId });
+  }
+
+  mockLog('navidrome', 'getLyrics', songId);
+  return `[00:00.00]Navidrome 示例歌词
+[00:05.00]这是第一行歌词
+[00:10.00]这是第二行歌词`;
+}

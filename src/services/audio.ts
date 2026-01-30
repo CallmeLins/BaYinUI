@@ -4,6 +4,7 @@
  */
 
 import { isTauri, mockLog } from './tauri';
+import { getNavidromeStreamUrl } from './navidrome';
 
 export interface AudioState {
   isPlaying: boolean;
@@ -11,6 +12,17 @@ export interface AudioState {
   duration: number;
   volume: number;
   hasSource: boolean;
+}
+
+// Navidrome 文件路径格式
+interface NavidromeFilePath {
+  type: 'navidrome';
+  songId: string;
+  config: {
+    serverUrl: string;
+    username: string;
+    password: string;
+  };
 }
 
 // 单例 Audio 元素
@@ -26,9 +38,40 @@ function getAudioElement(): HTMLAudioElement {
 }
 
 /**
+ * 检查是否为 Navidrome 文件路径
+ */
+function parseNavidromeFilePath(filePath: string): NavidromeFilePath | null {
+  try {
+    const parsed = JSON.parse(filePath);
+    if (parsed && parsed.type === 'navidrome' && parsed.songId && parsed.config) {
+      return parsed as NavidromeFilePath;
+    }
+  } catch {
+    // 不是 JSON，是普通文件路径
+  }
+  return null;
+}
+
+/**
  * 将本地文件路径转换为可播放的 URL
  */
 export async function getPlayableUrl(filePath: string): Promise<string> {
+  // 检查是否为 Navidrome 歌曲
+  const navidromeInfo = parseNavidromeFilePath(filePath);
+  if (navidromeInfo) {
+    console.log('Getting Navidrome stream URL for songId:', navidromeInfo.songId);
+    console.log('Navidrome config:', navidromeInfo.config);
+    try {
+      const streamUrl = await getNavidromeStreamUrl(navidromeInfo.config, navidromeInfo.songId);
+      console.log('Navidrome stream URL:', streamUrl);
+      return streamUrl;
+    } catch (error) {
+      console.error('Failed to get Navidrome stream URL:', error);
+      throw error;
+    }
+  }
+
+  // 本地文件
   if (isTauri()) {
     try {
       const { convertFileSrc } = await import('@tauri-apps/api/core');
@@ -62,18 +105,26 @@ export async function play(filePath: string): Promise<void> {
     // 创建一个 Promise 来等待音频加载
     const loadPromise = new Promise<void>((resolve, reject) => {
       const onCanPlay = () => {
+        console.log('Audio can play now');
         audio.removeEventListener('canplay', onCanPlay);
         audio.removeEventListener('error', onError);
+        audio.removeEventListener('loadedmetadata', onLoadedMetadata);
         resolve();
+      };
+      const onLoadedMetadata = () => {
+        console.log('Audio metadata loaded, duration:', audio.duration);
       };
       const onError = () => {
         audio.removeEventListener('canplay', onCanPlay);
         audio.removeEventListener('error', onError);
+        audio.removeEventListener('loadedmetadata', onLoadedMetadata);
+        const errorCode = audio.error?.code;
         const errorMsg = audio.error?.message || 'Unknown audio error';
-        console.error('Audio load error:', errorMsg);
-        reject(new Error(`无法加载音频: ${errorMsg}`));
+        console.error('Audio load error:', errorCode, errorMsg);
+        reject(new Error(`无法加载音频: ${errorMsg} (code: ${errorCode})`));
       };
       audio.addEventListener('canplay', onCanPlay);
+      audio.addEventListener('loadedmetadata', onLoadedMetadata);
       audio.addEventListener('error', onError);
     });
 
@@ -81,9 +132,9 @@ export async function play(filePath: string): Promise<void> {
     audio.load();
     currentFilePath = filePath;
 
-    // 等待加载完成或超时
+    // 等待加载完成或超时（增加到 30 秒）
     const timeoutPromise = new Promise<void>((_, reject) => {
-      setTimeout(() => reject(new Error('音频加载超时')), 10000);
+      setTimeout(() => reject(new Error('音频加载超时')), 30000);
     });
 
     await Promise.race([loadPromise, timeoutPromise]);

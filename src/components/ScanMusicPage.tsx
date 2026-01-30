@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { Menu, Folder, ScanSearch, Loader2, X, Music, Check, AlertCircle, CheckCircle } from 'lucide-react';
+import { Menu, Folder, ScanSearch, Loader2, X, Music, Check, AlertCircle, CheckCircle, Cloud } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { useMusic } from '../context/MusicContext';
 import {
@@ -9,11 +9,14 @@ import {
   getAndroidMusicDirectories,
   getCurrentPlatform,
 } from '../services/scanner';
+import { fetchNavidromeSongs, type NavidromeConfig } from '../services/navidrome';
+import { load } from '../services/storage';
 import type { Platform } from '../services/tauri';
 import { cn } from '../components/ui/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const STORAGE_KEY_DIRS = 'bayin_scan_directories';
+const NAVIDROME_CONFIG_KEY = 'navidromeConfig' as const;
 
 interface ToastProps {
   message: string;
@@ -65,6 +68,7 @@ export const ScanMusicPage = () => {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [platform, setPlatform] = useState<Platform>('browser');
   const [androidDirs, setAndroidDirs] = useState<string[]>([]);
+  const [navidromeConfig, setNavidromeConfig] = useState<NavidromeConfig | null>(null);
 
   useEffect(() => {
     const savedDirs = localStorage.getItem(STORAGE_KEY_DIRS);
@@ -92,6 +96,9 @@ export const ScanMusicPage = () => {
         const dirs = await getAndroidMusicDirectories();
         setAndroidDirs(dirs);
       }
+      // Load Navidrome config
+      const config = await load<NavidromeConfig | null>(NAVIDROME_CONFIG_KEY as never, null);
+      setNavidromeConfig(config);
     };
     init();
   }, []);
@@ -128,8 +135,16 @@ export const ScanMusicPage = () => {
   };
 
   const handleScan = async () => {
-    if (selectedDirs.length === 0) {
-      showToast('Please select at least one folder', 'error');
+    const hasLocalDirs = selectedDirs.length > 0;
+    const hasNavidrome = navidromeConfig && navidromeConfig.serverUrl && navidromeConfig.username && navidromeConfig.password;
+
+    if (!hasLocalDirs && !hasNavidrome) {
+      // No sources, clear all songs
+      setSongs([]);
+      setAlbums([]);
+      setArtists([]);
+      setHasScanned(true);
+      showToast('Library cleared - no sources configured', 'info');
       return;
     }
 
@@ -137,31 +152,65 @@ export const ScanMusicPage = () => {
     showToast('Scanning...', 'info');
 
     try {
-      const songs = await scanMusicFiles({
-        directories: selectedDirs,
-        skipShortAudio,
-        minDuration: skipShortAudio ? 60 : 0,
-      });
+      let allSongs: Array<{
+        id: string;
+        title: string;
+        artist: string;
+        album: string;
+        coverUrl: string;
+        duration: number;
+        isHr?: boolean;
+        isSq?: boolean;
+        fileSize?: number;
+        filePath?: string;
+      }> = [];
 
-      const convertedSongs = songs.map((s) => ({
-        id: s.id,
-        title: s.title,
-        artist: s.artist,
-        album: s.album,
-        coverUrl: s.coverUrl || '',
-        duration: s.duration,
-        isHr: s.isHr,
-        isSq: s.isSq,
-        fileSize: s.fileSize,
-        filePath: s.filePath,
-      }));
+      // Scan local directories
+      if (hasLocalDirs) {
+        const localSongs = await scanMusicFiles({
+          directories: selectedDirs,
+          skipShortAudio,
+          minDuration: skipShortAudio ? 60 : 0,
+        });
 
-      setSongs(convertedSongs);
+        allSongs = localSongs.map((s) => ({
+          id: s.id,
+          title: s.title,
+          artist: s.artist,
+          album: s.album,
+          coverUrl: s.coverUrl || '',
+          duration: s.duration,
+          isHr: s.isHr,
+          isSq: s.isSq,
+          fileSize: s.fileSize,
+          filePath: s.filePath,
+        }));
+      }
+
+      // Fetch from Navidrome
+      if (hasNavidrome) {
+        const navidromeSongs = await fetchNavidromeSongs(navidromeConfig);
+        const convertedNavidromeSongs = navidromeSongs.map((s) => ({
+          id: s.id,
+          title: s.title,
+          artist: s.artist,
+          album: s.album,
+          coverUrl: s.coverUrl || '',
+          duration: s.duration,
+          isHr: s.isHr,
+          isSq: s.isSq,
+          fileSize: s.fileSize,
+          filePath: JSON.stringify({ type: 'navidrome', songId: s.id, config: navidromeConfig }),
+        }));
+        allSongs = [...allSongs, ...convertedNavidromeSongs];
+      }
+
+      setSongs(allSongs);
 
       const albumMap = new Map<string, { name: string; artist: string; coverUrl: string; count: number }>();
       const artistMap = new Map<string, { name: string; coverUrl: string; count: number }>();
 
-      convertedSongs.forEach((song) => {
+      allSongs.forEach((song) => {
         if (!albumMap.has(song.album)) {
           albumMap.set(song.album, { name: song.album, artist: song.artist, coverUrl: song.coverUrl, count: 1 });
         } else {
@@ -191,7 +240,7 @@ export const ScanMusicPage = () => {
       })));
 
       setHasScanned(true);
-      showToast(`Successfully scanned ${songs.length} songs`, 'success');
+      showToast(`Successfully scanned ${allSongs.length} songs`, 'success');
       setTimeout(() => navigate('/'), 2000);
     } catch (error) {
       showToast(`Scan failed: ${error}`, 'error');
@@ -300,12 +349,21 @@ export const ScanMusicPage = () => {
         <section className="bg-white/50 dark:bg-[#1e1e1e]/50 backdrop-blur-md rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
            <div className="p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                 <div className="p-2 rounded-lg bg-purple-500/10 text-purple-500">
-                    <ScanSearch className="w-5 h-5" />
+                 <div className={cn(
+                   "p-2 rounded-lg",
+                   navidromeConfig ? "bg-green-500/10 text-green-500" : "bg-purple-500/10 text-purple-500"
+                 )}>
+                    {navidromeConfig ? <Cloud className="w-5 h-5" /> : <ScanSearch className="w-5 h-5" />}
                  </div>
                  <div>
                     <h3 className="font-medium text-gray-900 dark:text-white">Navidrome Server</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Connect to your personal music server</p>
+                    {navidromeConfig ? (
+                      <p className="text-xs text-green-600 dark:text-green-400">
+                        Connected: {navidromeConfig.serverUrl}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Not configured</p>
+                    )}
                  </div>
               </div>
               <button

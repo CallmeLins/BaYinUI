@@ -47,7 +47,11 @@ export const SongMenu = ({ isOpen, song, onClose }: SongMenuProps) => {
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            transition={{
+              type: "tween",
+              duration: 0.25,
+              ease: [0.32, 0.72, 0, 1],
+            }}
             className={cn(
               "relative w-full max-w-md overflow-hidden",
               "bg-white/90 dark:bg-[#282828]/90 backdrop-blur-xl saturate-150",
