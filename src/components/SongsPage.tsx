@@ -1,29 +1,27 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router';
-import { Menu, Search, Shuffle, ArrowUpDown, CheckSquare, Trash2, ListPlus, Play, X, MoreVertical } from 'lucide-react';
-import { Sidebar } from './Sidebar';
+import { Search, Shuffle, ArrowUpDown, CheckSquare, Trash2, ListPlus, Play, X, MoreVertical, Menu } from 'lucide-react';
 import { SongList } from './SongList';
 import { useMusic } from '../context/MusicContext';
 import { Song } from '../context/MusicContext';
+import { cn } from '../components/ui/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type SortOption = 'title' | 'artist' | 'album' | 'duration' | 'size' | 'date';
 
 export const SongsPage = () => {
   const navigate = useNavigate();
-  const { songs, hasScanned, shufflePlay, isDarkMode, playlists, playWithQueue, createPlaylist, addSongsToPlaylist, deleteSongs } = useMusic();
+  const { songs, hasScanned, shufflePlay, isDarkMode, playlists, playWithQueue, createPlaylist, addSongsToPlaylist, deleteSongs, setMobileSidebarOpen } = useMusic();
   const [sortBy, setSortBy] = useState<SortOption>('title');
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedSongs, setSelectedSongs] = useState<Set<string>>(new Set());
-  const [showActionMenu, setShowActionMenu] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [addToPlaylistOpen, setAddToPlaylistOpen] = useState(false);
   const [showNewPlaylistInput, setShowNewPlaylistInput] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
 
   const handleShufflePlay = () => {
-    // 随机播放时，将所有歌曲添加到播放队列
     shufflePlay(songs);
   };
 
@@ -31,23 +29,16 @@ export const SongsPage = () => {
   const [activeIndex, setActiveIndex] = useState<string | null>(null);
   const indexBarRef = useRef<HTMLDivElement>(null);
 
-  // 排序歌曲
+  // Sorting Logic
   const sortedSongs = [...songs].sort((a, b) => {
     switch (sortBy) {
-      case 'title':
-        return a.title.localeCompare(b.title, 'zh-CN');
-      case 'artist':
-        return a.artist.localeCompare(b.artist, 'zh-CN');
-      case 'album':
-        return a.album.localeCompare(b.album, 'zh-CN');
-      case 'duration':
-        return b.duration - a.duration;
-      case 'size':
-        return (b.fileSize || 0) - (a.fileSize || 0);
-      case 'date':
-        return parseInt(b.id) - parseInt(a.id);
-      default:
-        return 0;
+      case 'title': return a.title.localeCompare(b.title, 'zh-CN');
+      case 'artist': return a.artist.localeCompare(b.artist, 'zh-CN');
+      case 'album': return a.album.localeCompare(b.album, 'zh-CN');
+      case 'duration': return b.duration - a.duration;
+      case 'size': return (b.fileSize || 0) - (a.fileSize || 0);
+      case 'date': return parseInt(b.id) - parseInt(a.id);
+      default: return 0;
     }
   });
 
@@ -102,7 +93,6 @@ export const SongsPage = () => {
 
   const handlePlaySelected = () => {
     if (selectedSongs.size > 0) {
-      // 获取选中的歌曲列表
       const selectedSongList = songs.filter(s => selectedSongs.has(s.id));
       if (selectedSongList.length > 0) {
         playWithQueue(selectedSongList[0], selectedSongList);
@@ -110,10 +100,9 @@ export const SongsPage = () => {
     }
   };
 
-  // 字母索引处理
+  // Alphabet Index Logic
   const handleIndexTouch = (e: React.TouchEvent | React.MouseEvent) => {
     if (!indexBarRef.current) return;
-
     const touch = 'touches' in e ? e.touches[0] : e;
     const rect = indexBarRef.current.getBoundingClientRect();
     const y = touch.clientY - rect.top;
@@ -127,9 +116,7 @@ export const SongsPage = () => {
   };
 
   const scrollToLetter = (letter: string) => {
-    // 查找以该字母开头的第一首歌
     let targetSong: Song | undefined;
-    
     if (letter === '0') {
       targetSong = sortedSongs.find(s => /^[0-9]/.test(s.title));
     } else if (letter === '#') {
@@ -140,7 +127,6 @@ export const SongsPage = () => {
         s.title.toLowerCase().startsWith(letter.toLowerCase())
       );
     }
-
     if (targetSong) {
       const element = document.getElementById(`song-${targetSong.id}`);
       if (element) {
@@ -154,147 +140,128 @@ export const SongsPage = () => {
   };
 
   return (
-    <div 
-      style={{ backgroundColor: isDarkMode ? '#0c0c0c' : '#f8f9fb' }}
-      className="relative min-h-screen"
-    >
-      {/* Header */}
-      <div
-        style={{ backgroundColor: isDarkMode ? '#191919' : '#ffffff' }}
-        className="sticky top-0 z-10"
-      >
-        <div className="relative flex items-center justify-between px-4 py-3">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className={`p-2 rounded lg:hidden ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
+    <div className="relative pb-20">
+      {/* Sticky Glass Header */}
+      <div className={cn(
+        "sticky top-0 z-10 -mx-6 px-6 py-3 mb-2 flex items-center justify-between",
+        "bg-white/80 dark:bg-[#121212]/80 backdrop-blur-xl border-b border-black/5 dark:border-white/10"
+      )}>
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => setMobileSidebarOpen(true)}
+            className="lg:hidden p-2 -ml-2 rounded-md hover:bg-black/5 dark:hover:bg-white/10"
           >
             <Menu className="w-6 h-6" />
           </button>
-          <h1 className="text-lg font-medium absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0">歌曲</h1>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate('/search')}
-              className={`p-2 rounded ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
-            >
-              <Search className="w-6 h-6" />
-            </button>
-            <button
-              onClick={() => setSortMenuOpen(true)}
-              className={`p-2 rounded ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
-            >
-              <MoreVertical className="w-6 h-6" />
-            </button>
-          </div>
+          <h1 className="text-2xl font-semibold tracking-tight">Songs</h1>
+          {hasScanned && (
+            <span className="text-sm text-gray-500 dark:text-gray-400 font-medium hidden sm:inline-block">
+              {songs.length} songs
+            </span>
+          )}
         </div>
+        
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate('/search')}
+            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+          >
+            <Search className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setSortMenuOpen(true)}
+            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+          >
+            <MoreVertical className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
 
-        {/* Control bar */}
-        {hasScanned && (
-          <div className="flex items-center px-4 py-2 gap-2">
-            {!selectionMode ? (
-              <>
-                <button
-                  onClick={handleShufflePlay}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full ${
-                    isDarkMode
-                      ? 'bg-blue-600 hover:bg-blue-700'
-                      : 'bg-blue-500 hover:bg-blue-600'
-                  } text-white`}
-                >
-                  <Shuffle className="w-4 h-4" />
-                  <span>随机播放</span>
-                </button>
-                <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {songs.length} 首歌曲
-                </span>
-                <div className="flex-1" />
-                <button
-                  onClick={() => setSortMenuOpen(true)}
-                  className={`p-2 rounded ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
-                >
-                  <ArrowUpDown className="w-5 h-5" />
-                </button>
-                <button 
-                  onClick={() => setSelectionMode(true)}
-                  className={`p-2 rounded ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
-                >
-                  <CheckSquare className="w-5 h-5" />
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={() => {
-                    setSelectionMode(false);
-                    setSelectedSongs(new Set());
-                  }}
-                  className={`p-2 rounded ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
-                >
-                  <X className="w-5 h-5" />
-                </button>
-                <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  已选 {selectedSongs.size} 首
-                </span>
-                <button
-                  onClick={toggleSelectAll}
-                  className={`text-sm px-3 py-1 rounded ${
-                    isDarkMode ? 'text-blue-400 hover:bg-gray-800' : 'text-blue-600 hover:bg-gray-100'
-                  }`}
-                >
-                  {selectedSongs.size === songs.length ? '取消全选' : '全选'}
-                </button>
-                <div className="flex-1" />
+      {/* Toolbar */}
+      {hasScanned && (
+        <div className="flex items-center gap-2 mb-4 px-2">
+          {!selectionMode ? (
+            <>
+              <button
+                onClick={handleShufflePlay}
+                className="flex items-center gap-2 px-4 py-1.5 rounded-md bg-blue-500 hover:bg-blue-600 text-white shadow-sm transition-all active:scale-95"
+              >
+                <Shuffle className="w-4 h-4" />
+                <span className="text-sm font-medium">Shuffle</span>
+              </button>
+              <div className="flex-1" />
+              <button
+                onClick={() => setSortMenuOpen(true)}
+                className="p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300"
+              >
+                <ArrowUpDown className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={() => setSelectionMode(true)}
+                className="p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300"
+              >
+                <CheckSquare className="w-4 h-4" />
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => {
+                  setSelectionMode(false);
+                  setSelectedSongs(new Set());
+                }}
+                className="p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/10"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <span className="text-sm font-medium">
+                {selectedSongs.size} Selected
+              </span>
+              <button
+                onClick={toggleSelectAll}
+                className="text-sm px-3 py-1.5 rounded-md text-blue-500 hover:bg-blue-500/10 font-medium ml-2"
+              >
+                {selectedSongs.size === songs.length ? 'Deselect All' : 'Select All'}
+              </button>
+              <div className="flex-1" />
+              <div className="flex items-center gap-1">
                 <button
                   onClick={handlePlaySelected}
                   disabled={selectedSongs.size === 0}
-                  className={`p-2 rounded ${
-                    selectedSongs.size > 0
-                      ? isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'
-                      : 'opacity-50 cursor-not-allowed'
-                  }`}
+                  className="p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-30"
                 >
-                  <Play className="w-5 h-5" />
+                  <Play className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setAddToPlaylistOpen(true)}
                   disabled={selectedSongs.size === 0}
-                  className={`p-2 rounded ${
-                    selectedSongs.size > 0
-                      ? isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'
-                      : 'opacity-50 cursor-not-allowed'
-                  }`}
+                  className="p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-30"
                 >
-                  <ListPlus className="w-5 h-5" />
+                  <ListPlus className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setDeleteConfirmOpen(true)}
                   disabled={selectedSongs.size === 0}
-                  className={`p-2 rounded ${
-                    selectedSongs.size > 0
-                      ? isDarkMode ? 'hover:bg-gray-800 text-red-400' : 'hover:bg-gray-100 text-red-600'
-                      : 'opacity-50 cursor-not-allowed'
-                  }`}
+                  className="p-2 rounded-md hover:bg-red-500/10 text-red-500 disabled:opacity-30"
                 >
-                  <Trash2 className="w-5 h-5" />
+                  <Trash2 className="w-4 h-4" />
                 </button>
-              </>
-            )}
-          </div>
-        )}
-      </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
-      {/* Main content */}
-      <div className="relative">
+      {/* Main Content */}
+      <div className="relative min-h-[50vh]">
         {!hasScanned ? (
-          <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="flex flex-col items-center justify-center h-full pt-20">
+            <p className="text-gray-500 mb-4">No music found.</p>
             <button
               onClick={() => navigate('/scan')}
-              className={`px-6 py-3 rounded-lg ${
-                isDarkMode
-                  ? 'bg-blue-600 hover:bg-blue-700'
-                  : 'bg-blue-500 hover:bg-blue-600'
-              } text-white`}
+              className="px-6 py-2 bg-blue-500 text-white rounded-lg shadow-sm hover:bg-blue-600"
             >
-              扫描音乐
+              Scan Music
             </button>
           </div>
         ) : (
@@ -306,10 +273,10 @@ export const SongsPage = () => {
               onToggleSelection={toggleSongSelection}
             />
             
-            {/* 字母索引 */}
+            {/* Alphabet Index */}
             <div
               ref={indexBarRef}
-              className="fixed right-1 top-1/2 -translate-y-1/2 z-50 py-2 pointer-events-auto"
+              className="fixed right-1 top-1/2 -translate-y-1/2 z-20 py-2 select-none"
               onTouchStart={handleIndexTouch}
               onTouchMove={handleIndexTouch}
               onTouchEnd={handleIndexTouchEnd}
@@ -320,62 +287,59 @@ export const SongsPage = () => {
               {alphabetIndex.map((letter) => (
                 <div
                   key={letter}
-                  className={`text-xs px-1 py-0.5 cursor-pointer select-none ${
+                  className={cn(
+                    "text-[10px] px-1 py-[1px] cursor-pointer text-center transition-colors",
                     activeIndex === letter
-                      ? isDarkMode ? 'text-blue-400 font-bold' : 'text-blue-600 font-bold'
-                      : isDarkMode ? 'text-gray-500' : 'text-gray-400'
-                  }`}
+                      ? "text-blue-500 font-bold scale-125"
+                      : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  )}
                 >
                   {letter}
                 </div>
               ))}
             </div>
 
-            {/* 字母提示 */}
-            {activeIndex && (
-              <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 w-20 h-20 rounded-lg bg-black bg-opacity-70 flex items-center justify-center">
-                <span className="text-white text-4xl font-bold">{activeIndex}</span>
-              </div>
-            )}
+            {/* Large Letter Overlay */}
+            <AnimatePresence>
+              {activeIndex && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                  className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-20 h-20 rounded-xl bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-md flex items-center justify-center shadow-2xl"
+                >
+                  <span className="text-4xl font-bold text-gray-900 dark:text-white">{activeIndex}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </>
         )}
       </div>
 
-      {/* Sidebar */}
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-      {/* Sort menu */}
+      {/* Modals / Popovers */}
+      {/* Sort Menu */}
       {sortMenuOpen && (
         <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-50"
-            onClick={() => setSortMenuOpen(false)}
-          />
-          {/* Menu */}
-          <div
-            style={{ backgroundColor: isDarkMode ? '#191919' : '#ffffff' }}
-            className="fixed bottom-0 left-0 right-0 lg:left-64 rounded-t-3xl p-6 max-h-[70vh] overflow-y-auto scrollbar-thin z-50 shadow-lg"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-medium mb-4">排序方式</h3>
-            <div className="space-y-2">
+          <div className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm" onClick={() => setSortMenuOpen(false)} />
+          <div className="fixed bottom-24 right-6 w-64 z-50 bg-white/90 dark:bg-[#323232]/90 backdrop-blur-xl rounded-xl shadow-2xl border border-black/5 dark:border-white/10 p-1.5 animate-fade-in">
+            <h3 className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Sort By</h3>
+            <div className="space-y-0.5">
               {[
-                { label: '标题', value: 'title' as SortOption },
-                { label: '艺术家', value: 'artist' as SortOption },
-                { label: '专辑', value: 'album' as SortOption },
-                { label: '时长', value: 'duration' as SortOption },
-                { label: '大小', value: 'size' as SortOption },
-                { label: '添加时间', value: 'date' as SortOption },
+                { label: 'Title', value: 'title' },
+                { label: 'Artist', value: 'artist' },
+                { label: 'Album', value: 'album' },
+                { label: 'Duration', value: 'duration' },
+                { label: 'Date Added', value: 'date' },
               ].map((option) => (
                 <button
                   key={option.value}
-                  className={`w-full text-left px-4 py-3 rounded ${
-                    sortBy === option.value
-                      ? isDarkMode ? 'bg-blue-900 text-blue-400' : 'bg-blue-100 text-blue-600'
-                      : isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
-                  }`}
-                  onClick={() => handleSortOption(option.value)}
+                  className={cn(
+                    "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors",
+                    sortBy === option.value 
+                      ? "bg-blue-500 text-white" 
+                      : "hover:bg-blue-500 hover:text-white text-gray-700 dark:text-gray-200"
+                  )}
+                  onClick={() => handleSortOption(option.value as SortOption)}
                 >
                   {option.label}
                 </button>
@@ -385,63 +349,37 @@ export const SongsPage = () => {
         </>
       )}
 
-      {/* Delete confirmation */}
+      {/* Delete Confirmation */}
       {deleteConfirmOpen && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-50"
-            onClick={() => setDeleteConfirmOpen(false)}
-          />
-          {/* Dialog */}
-          <div
-            style={{ backgroundColor: isDarkMode ? '#191919' : '#ffffff' }}
-            className="fixed bottom-0 left-0 right-0 lg:left-64 rounded-t-3xl p-6 z-50 shadow-lg"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-medium mb-2">确认删除</h3>
-            <p className={`mb-6 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              确定要永久删除选中的 {selectedSongs.size} 首歌曲吗？此操作无法撤销。
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="w-full max-w-sm bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-2xl p-6 border border-black/5 dark:border-white/10">
+            <h3 className="text-lg font-semibold mb-2">Delete Songs?</h3>
+            <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm">
+              Are you sure you want to delete {selectedSongs.size} songs? This action cannot be undone.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setDeleteConfirmOpen(false)}
-                className={`flex-1 py-3 rounded-lg ${
-                  isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-                }`}
+                className="flex-1 py-2 rounded-lg bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors font-medium text-sm"
               >
-                取消
+                Cancel
               </button>
               <button
                 onClick={handleDelete}
-                className="flex-1 py-3 rounded-lg bg-red-600 hover:bg-red-700 text-white"
+                className="flex-1 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors font-medium text-sm"
               >
-                删除
+                Delete
               </button>
             </div>
           </div>
-        </>
+        </div>
       )}
 
-      {/* Add to playlist */}
+      {/* Add to Playlist */}
       {addToPlaylistOpen && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-50"
-            onClick={() => {
-              setAddToPlaylistOpen(false);
-              setShowNewPlaylistInput(false);
-              setNewPlaylistName('');
-            }}
-          />
-          {/* Dialog */}
-          <div
-            style={{ backgroundColor: isDarkMode ? '#191919' : '#ffffff' }}
-            className="fixed bottom-0 left-0 right-0 lg:left-64 rounded-t-3xl p-6 max-h-[70vh] overflow-y-auto scrollbar-thin z-50 shadow-lg"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-medium mb-4">添加到歌单</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="w-full max-w-sm bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-2xl p-6 border border-black/5 dark:border-white/10 max-h-[80vh] flex flex-col">
+            <h3 className="text-lg font-semibold mb-4">Add to Playlist</h3>
             
             {showNewPlaylistInput ? (
               <div className="mb-4">
@@ -449,75 +387,60 @@ export const SongsPage = () => {
                   type="text"
                   value={newPlaylistName}
                   onChange={(e) => setNewPlaylistName(e.target.value)}
-                  placeholder="输入歌单名称"
-                  className={`w-full px-4 py-3 rounded-lg border ${
-                    isDarkMode
-                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
-                      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
-                  }`}
+                  placeholder="Playlist Name"
+                  className="w-full px-3 py-2 rounded-lg bg-gray-100 dark:bg-black/20 border-none focus:ring-2 focus:ring-blue-500 outline-none"
                   autoFocus
                 />
-                <div className="flex gap-3 mt-3">
+                <div className="flex gap-2 mt-3">
                   <button
                     onClick={() => {
                       setShowNewPlaylistInput(false);
                       setNewPlaylistName('');
                     }}
-                    className={`flex-1 py-2 rounded-lg ${
-                      isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-                    }`}
+                    className="flex-1 py-2 rounded-lg bg-gray-100 dark:bg-white/10 text-sm font-medium"
                   >
-                    取消
+                    Cancel
                   </button>
                   <button
                     onClick={handleCreateAndAddToPlaylist}
                     disabled={!newPlaylistName.trim()}
-                    className={`flex-1 py-2 rounded-lg ${
-                      newPlaylistName.trim()
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                        : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                    }`}
+                    className="flex-1 py-2 rounded-lg bg-blue-500 text-white text-sm font-medium disabled:opacity-50"
                   >
-                    创建并添加
+                    Create
                   </button>
                 </div>
               </div>
             ) : (
               <button
                 onClick={() => setShowNewPlaylistInput(true)}
-                className={`w-full text-left px-4 py-3 rounded-lg mb-3 ${
-                  isDarkMode
-                    ? 'bg-blue-900 text-blue-400 hover:bg-blue-800'
-                    : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
-                }`}
+                className="w-full text-left px-4 py-3 rounded-xl mb-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors flex items-center gap-2"
               >
-                + 新建歌单
+                <ListPlus className="w-5 h-5" />
+                New Playlist
               </button>
             )}
 
-            <div className="space-y-2">
+            <div className="flex-1 overflow-y-auto min-h-0 space-y-1">
               {playlists.map((playlist) => (
                 <button
                   key={playlist.id}
                   onClick={() => handleAddToPlaylist(playlist.id)}
-                  className={`w-full text-left px-4 py-3 rounded-lg ${
-                    isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
-                  }`}
+                  className="w-full text-left px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors group"
                 >
-                  <div className="font-medium">{playlist.name}</div>
-                  <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {playlist.songCount} 首歌曲
-                  </div>
+                  <div className="font-medium text-gray-900 dark:text-white">{playlist.name}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">{playlist.songCount} songs</div>
                 </button>
               ))}
-              {playlists.length === 0 && !showNewPlaylistInput && (
-                <p className={`text-center py-8 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                  暂无歌单，请先创建
-                </p>
-              )}
             </div>
+            
+            <button 
+               onClick={() => setAddToPlaylistOpen(false)}
+               className="mt-4 w-full py-2.5 rounded-xl bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 font-medium text-sm transition-colors"
+            >
+               Cancel
+            </button>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

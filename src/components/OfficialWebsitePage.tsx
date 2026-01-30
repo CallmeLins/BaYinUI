@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { ChevronLeft, ExternalLink, Globe, Github, Mail } from 'lucide-react';
 import { useMusic } from '../context/MusicContext';
 import { Sidebar } from './Sidebar';
+import { cn } from '../components/ui/utils';
 
 export const OfficialWebsitePage = () => {
   const navigate = useNavigate();
@@ -12,120 +13,104 @@ export const OfficialWebsitePage = () => {
   const links = [
     {
       icon: <Github className="w-5 h-5" />,
-      title: 'GitHub 仓库',
-      description: '查看源代码，报告问题，参与开发',
+      title: 'GitHub Repository',
+      description: 'View source code, report issues, contribute.',
       url: 'https://github.com/CallmeLins',
-      color: 'purple',
+      color: 'bg-purple-500',
     },
     {
       icon: <Globe className="w-5 h-5" />,
-      title: '项目主页',
-      description: '了解更多关于八音的信息',
+      title: 'Project Homepage',
+      description: 'Learn more about BaYin.',
       url: 'https://github.com/CallmeLins',
-      color: 'blue',
+      color: 'bg-blue-500',
     },
     {
       icon: <Mail className="w-5 h-5" />,
-      title: '联系方式',
-      description: '通过邮件与我们取得联系',
+      title: 'Contact',
+      description: 'Get in touch via email.',
       url: 'mailto:support@example.com',
-      color: 'green',
+      color: 'bg-green-500',
     },
   ];
 
-  const getColorClasses = (color: string) => {
-    const colors = {
-      purple: isDarkMode ? 'bg-purple-900 text-purple-400' : 'bg-purple-100 text-purple-600',
-      blue: isDarkMode ? 'bg-blue-900 text-blue-400' : 'bg-blue-100 text-blue-600',
-      green: isDarkMode ? 'bg-green-900 text-green-400' : 'bg-green-100 text-green-600',
-    };
-    return colors[color as keyof typeof colors] || colors.blue;
-  };
-
   return (
-    <div 
-      style={{ backgroundColor: isDarkMode ? '#0c0c0c' : '#f8f9fb' }}
-      className="min-h-screen"
-    >
+    <div className="relative pb-20">
       {/* Header */}
-      <div
-        style={{ backgroundColor: isDarkMode ? '#191919' : '#ffffff' }}
-        className="sticky top-0"
-      >
-        <div className="flex items-center px-4 py-3">
-          <button
-            onClick={() => navigate(-1)}
-            className={`p-2 rounded ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-          <h1 className="text-lg font-medium ml-2">官方网站</h1>
-        </div>
+      <div className={cn(
+        "sticky top-0 z-10 -mx-6 px-6 py-4 mb-6 flex items-center gap-4",
+        "bg-white/80 dark:bg-[#121212]/80 backdrop-blur-xl border-b border-black/5 dark:border-white/10"
+      )}>
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+        >
+          <ChevronLeft className="w-6 h-6" />
+        </button>
+        <h1 className="text-lg font-semibold tracking-tight">Official Website</h1>
       </div>
 
       {/* Content */}
-      <div className="p-4 space-y-4">
-        <div className="text-center py-6">
-          <div className="text-5xl mb-3">🎵</div>
-          <h2 className="text-2xl font-bold mb-2">八音音乐播放器</h2>
-          <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            优雅、强大、开源的音乐播放器
+      <div className="max-w-2xl mx-auto space-y-8">
+        
+        {/* Hero */}
+        <div className="text-center py-8">
+          <div className="text-5xl mb-4">🎵</div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">BaYin Music Player</h2>
+          <p className="text-gray-500 dark:text-gray-400">
+            Elegant, powerful, open-source.
           </p>
         </div>
 
-        {links.map((link, index) => (
-          <a
-            key={index}
-            href={link.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`block p-6 rounded-lg border ${
-              isDarkMode ? 'bg-gray-800 border-gray-700 hover:bg-gray-750' : 'bg-white border-gray-200 hover:bg-gray-50'
-            }`}
-          >
-            <div className="flex items-start gap-4">
-              <div className={`p-3 rounded-full ${getColorClasses(link.color)} flex-shrink-0`}>
+        {/* Links Grid */}
+        <div className="grid gap-4">
+          {links.map((link, index) => (
+            <a
+              key={index}
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(
+                "group flex items-start gap-4 p-5 rounded-2xl transition-all",
+                "bg-white/50 dark:bg-[#1e1e1e]/50 backdrop-blur-md",
+                "border border-black/5 dark:border-white/10",
+                "hover:bg-white/80 dark:hover:bg-[#1e1e1e]/80 hover:shadow-md"
+              )}
+            >
+              <div className={cn("p-3 rounded-xl text-white shadow-sm", link.color)}>
                 {link.icon}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-medium">{link.title}</h3>
-                  <ExternalLink className="w-4 h-4" />
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{link.title}</h3>
+                  <ExternalLink className="w-3.5 h-3.5 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
                 </div>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   {link.description}
                 </p>
               </div>
-            </div>
-          </a>
-        ))}
-
-        <div
-          className={`p-6 rounded-lg border ${
-            isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-          }`}
-        >
-          <h3 className="font-medium mb-3">关注我们</h3>
-          <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            在GitHub上关注项目，获取最新更新和动态
-          </p>
-          <div className="flex gap-3">
-            <a
-              href="https://github.com/CallmeLins"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg ${
-                isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-              }`}
-            >
-              <Github className="w-4 h-4" />
-              <span>GitHub</span>
             </a>
-          </div>
+          ))}
+        </div>
+
+        {/* Follow Us */}
+        <div className="bg-white/50 dark:bg-[#1e1e1e]/50 backdrop-blur-md rounded-2xl border border-black/5 dark:border-white/10 p-6 shadow-sm">
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Follow Us</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            Star the project on GitHub to get the latest updates.
+          </p>
+          <a
+            href="https://github.com/CallmeLins"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 text-sm font-medium transition-colors"
+          >
+            <Github className="w-4 h-4" />
+            <span>GitHub</span>
+          </a>
         </div>
       </div>
 
-      {/* Sidebar */}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
     </div>
   );

@@ -1,69 +1,116 @@
-import { ListPlus, PlaySquare, User, Disc, Info, Trash2 } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { ListPlus, PlaySquare, User, Disc, Info, Trash2, X } from 'lucide-react';
 import { Song, useMusic } from '../context/MusicContext';
+import { cn } from '../components/ui/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface SongMenuProps {
-  song: Song;
+  isOpen: boolean;
+  song: Song | null;
   onClose: () => void;
 }
 
-export const SongMenu = ({ song, onClose }: SongMenuProps) => {
-  const { isDarkMode, addNextToQueue } = useMusic();
+export const SongMenu = ({ isOpen, song, onClose }: SongMenuProps) => {
+  const { addNextToQueue } = useMusic();
 
   const handlePlayNext = () => {
-    addNextToQueue(song);
+    if (song) {
+      addNextToQueue(song);
+    }
     onClose();
   };
 
   const menuItems = [
-    { icon: <ListPlus className="w-5 h-5" />, label: '添加到歌单', onClick: onClose },
-    { icon: <PlaySquare className="w-5 h-5" />, label: '下一首播放', onClick: handlePlayNext },
-    { icon: <User className="w-5 h-5" />, label: '艺术家', onClick: onClose },
-    { icon: <Disc className="w-5 h-5" />, label: '专辑', onClick: onClose },
-    { icon: <Info className="w-5 h-5" />, label: '歌曲信息', onClick: onClose },
-    { icon: <Trash2 className="w-5 h-5 text-red-500" />, label: '永久删除', danger: true, onClick: onClose },
+    { icon: <ListPlus className="w-5 h-5" />, label: 'Add to Playlist', onClick: onClose },
+    { icon: <PlaySquare className="w-5 h-5" />, label: 'Play Next', onClick: handlePlayNext },
+    { icon: <User className="w-5 h-5" />, label: 'Go to Artist', onClick: onClose },
+    { icon: <Disc className="w-5 h-5" />, label: 'Go to Album', onClick: onClose },
+    { icon: <Info className="w-5 h-5" />, label: 'Song Info', onClick: onClose },
+    { icon: <Trash2 className="w-5 h-5" />, label: 'Delete from Library', danger: true, onClick: onClose },
   ];
 
-  return (
-    <div
-      className="fixed inset-0 z-50"
-      onClick={onClose}
-    >
-      <div
-        style={{ backgroundColor: isDarkMode ? '#191919' : '#ffffff' }}
-        className="fixed bottom-0 left-0 right-0 rounded-t-3xl p-6 max-h-[70vh] overflow-y-auto scrollbar-thin shadow-lg"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Song info */}
-        <div className={`flex items-center gap-4 mb-6 pb-6 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-          <img
-            src={song.coverUrl}
-            alt={song.title}
-            className="w-16 h-16 rounded object-cover"
+  return createPortal(
+    <AnimatePresence>
+      {isOpen && song && (
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4">
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+            onClick={onClose}
           />
-          <div className="flex-1 min-w-0">
-            <div className="font-medium truncate">{song.title}</div>
-            <div className={`text-sm truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              {song.artist} · {song.album}
-            </div>
-          </div>
-        </div>
 
-        {/* Menu items */}
-        <div className="space-y-2">
-          {menuItems.map((item, index) => (
-            <button
-              key={index}
-              onClick={item.onClick}
-              className={`w-full flex items-center gap-4 px-4 py-3 rounded-lg ${
-                isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
-              } transition-colors ${item.danger ? 'text-red-500' : ''}`}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </button>
-          ))}
+          {/* Modal / Sheet */}
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className={cn(
+              "relative w-full max-w-md overflow-hidden",
+              "bg-white/90 dark:bg-[#282828]/90 backdrop-blur-xl saturate-150",
+              "rounded-t-2xl sm:rounded-2xl",
+              "shadow-2xl border-t sm:border border-black/5 dark:border-white/10",
+              "flex flex-col max-h-[85vh]"
+            )}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="p-6 pb-4 flex items-start gap-4 border-b border-black/5 dark:border-white/5">
+              <img
+                src={song.coverUrl}
+                alt={song.title}
+                className="w-16 h-16 rounded-lg shadow-md object-cover bg-gray-100 dark:bg-white/5"
+              />
+              <div className="flex-1 min-w-0 pt-1">
+                <h3 className="font-semibold text-lg leading-tight truncate text-gray-900 dark:text-white mb-1">
+                  {song.title}
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                  {song.artist} &middot; {song.album}
+                </p>
+              </div>
+              <button 
+                onClick={onClose}
+                className="p-1 rounded-full bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors"
+              >
+                <X className="w-5 h-5 opacity-60" />
+              </button>
+            </div>
+
+            {/* Menu Items */}
+            <div className="p-2 overflow-y-auto scrollbar-thin">
+              {menuItems.map((item, index) => (
+                <button
+                  key={index}
+                  onClick={item.onClick}
+                  className={cn(
+                    "w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200",
+                    "hover:bg-black/5 dark:hover:bg-white/10 active:scale-[0.98]",
+                    item.danger ? "text-red-500 hover:bg-red-500/10" : "text-gray-700 dark:text-gray-200"
+                  )}
+                >
+                  <span className={cn("opacity-70", item.danger && "opacity-100")}>{item.icon}</span>
+                  <span className="font-medium">{item.label}</span>
+                </button>
+              ))}
+            </div>
+            
+            {/* Cancel Button (Mobile only usually, but good for accessibility) */}
+            <div className="p-4 pt-2 sm:hidden">
+               <button 
+                  onClick={onClose}
+                  className="w-full py-3 rounded-xl bg-gray-100 dark:bg-white/10 font-semibold text-gray-900 dark:text-white"
+               >
+                  Cancel
+               </button>
+            </div>
+          </motion.div>
         </div>
-      </div>
-    </div>
+      )}
+    </AnimatePresence>,
+    document.body
   );
 };

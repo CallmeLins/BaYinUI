@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { MoreVertical, Check } from 'lucide-react';
 import { Song, useMusic } from '../context/MusicContext';
 import { SongMenu } from './SongMenu';
+import { cn } from '../components/ui/utils';
 
 interface SongListProps {
   songs: Song[];
@@ -11,7 +12,7 @@ interface SongListProps {
 }
 
 export const SongList = ({ songs, selectionMode = false, selectedSongs = new Set(), onToggleSelection }: SongListProps) => {
-  const { playWithQueue, isDarkMode, showCoverInList } = useMusic();
+  const { playWithQueue, showCoverInList, currentSong } = useMusic();
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -19,7 +20,6 @@ export const SongList = ({ songs, selectionMode = false, selectedSongs = new Set
     if (selectionMode && onToggleSelection) {
       onToggleSelection(song.id);
     } else {
-      // 播放歌曲并将当前列表设为播放队列
       playWithQueue(song, songs);
     }
   };
@@ -29,86 +29,103 @@ export const SongList = ({ songs, selectionMode = false, selectedSongs = new Set
     setMenuOpen(true);
   };
 
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
   return (
-    <div className="relative">
-      <div className={selectionMode ? 'pr-8' : ''}>
-        {songs.map((song) => (
-          <div
-            key={song.id}
-            id={`song-${song.id}`}
-            className={`flex items-center gap-3 px-4 py-3 border-b ${
-              isDarkMode ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-100 hover:bg-gray-50'
-            } cursor-pointer`}
-            onClick={() => handleSongClick(song)}
-          >
-            {showCoverInList && (
-              <img
-                src={song.coverUrl}
-                alt={song.title}
-                className="w-14 h-14 rounded object-cover"
-              />
-            )}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-medium truncate">{song.title}</span>
-                {song.isHR && (
-                  <span className="text-xs px-1.5 py-0.5 bg-red-500 text-white rounded">HR</span>
-                )}
-                {song.isSQ && (
-                  <span className="text-xs px-1.5 py-0.5 bg-yellow-500 text-white rounded">SQ</span>
+    <div className="relative w-full">
+      <div className="flex flex-col">
+        {songs.map((song, index) => {
+          const isSelected = selectedSongs.has(song.id);
+          const isCurrent = currentSong?.id === song.id;
+
+          return (
+            <div
+              key={song.id}
+              id={`song-${song.id}`}
+              className={cn(
+                "group relative flex items-center gap-2 px-1 py-2 cursor-default transition-colors duration-100",
+                // Zebra Striping
+                index % 2 === 0 ? "bg-transparent" : "bg-black/[0.02] dark:bg-white/[0.02]",
+                // Hover State
+                "hover:bg-blue-500 hover:text-white",
+                // Selection State (if in selection mode)
+                isSelected && "bg-blue-500 text-white",
+                // Current Playing State
+                isCurrent && !isSelected && "bg-black/5 dark:bg-white/10 font-medium"
+              )}
+              onClick={() => handleSongClick(song)}
+            >
+              {showCoverInList && (
+                <img
+                  src={song.coverUrl}
+                  alt={song.title}
+                  className="w-10 h-10 rounded-[4px] object-cover shadow-sm"
+                />
+              )}
+              
+              <div className="flex-1 min-w-0 flex flex-col justify-center h-10">
+                <div className="flex items-center gap-2">
+                  <span className="truncate text-sm font-medium leading-tight">
+                    {song.title}
+                  </span>
+                  {song.isHR && (
+                    <span className="text-[9px] px-1 py-0.5 bg-red-500 text-white rounded-[3px] font-bold tracking-wider">HR</span>
+                  )}
+                  {song.isSQ && (
+                    <span className="text-[9px] px-1 py-0.5 bg-yellow-500 text-white rounded-[3px] font-bold tracking-wider">SQ</span>
+                  )}
+                </div>
+                <div className={cn(
+                  "text-xs truncate opacity-70 group-hover:text-white/80",
+                  isCurrent ? "text-blue-500 dark:text-blue-400" : "text-gray-500 dark:text-gray-400"
+                )}>
+                  {song.artist} &middot; {song.album}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                {selectionMode ? (
+                  <div
+                    className={cn(
+                      "w-5 h-5 rounded-full border flex items-center justify-center transition-all",
+                      isSelected
+                        ? "bg-white border-white text-blue-500"
+                        : "border-white/50"
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onToggleSelection) {
+                        onToggleSelection(song.id);
+                      }
+                    }}
+                  >
+                    {isSelected && <Check className="w-3 h-3" />}
+                  </div>
+                ) : (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMenuOpen(song);
+                    }}
+                    className="p-1.5 rounded-md hover:bg-white/20 text-current"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
                 )}
               </div>
-              <div className={`text-sm truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                {song.artist} · {song.album}
-              </div>
+
+              {/* Separator Line (Indented) */}
+              <div className="absolute bottom-0 left-1 right-0 h-[1px] bg-black/5 dark:bg-white/5 group-hover:hidden" />
             </div>
-            {selectionMode ? (
-              <div
-                className={`w-6 h-6 rounded border-2 flex items-center justify-center ${
-                  selectedSongs.has(song.id)
-                    ? 'bg-blue-600 border-blue-600'
-                    : isDarkMode ? 'border-gray-600' : 'border-gray-400'
-                }`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (onToggleSelection) {
-                    onToggleSelection(song.id);
-                  }
-                }}
-              >
-                {selectedSongs.has(song.id) && <Check className="w-4 h-4 text-white" />}
-              </div>
-            ) : (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleMenuOpen(song);
-                }}
-                className={`p-2 rounded ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}
-              >
-                <MoreVertical className="w-5 h-5" />
-              </button>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Song menu */}
-      {menuOpen && selectedSong && (
-        <SongMenu
-          song={selectedSong}
-          onClose={() => {
-            setMenuOpen(false);
-            setSelectedSong(null);
-          }}
-        />
-      )}
+      <SongMenu
+        isOpen={menuOpen}
+        song={selectedSong}
+        onClose={() => setMenuOpen(false)}
+      />
     </div>
   );
 };

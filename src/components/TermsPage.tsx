@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { ChevronLeft } from 'lucide-react';
 import { useMusic } from '../context/MusicContext';
 import { Sidebar } from './Sidebar';
+import { cn } from '../components/ui/utils';
 
 export const TermsPage = () => {
   const navigate = useNavigate();
@@ -10,76 +11,60 @@ export const TermsPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div 
-      style={{ backgroundColor: isDarkMode ? '#0c0c0c' : '#f8f9fb' }}
-      className="min-h-screen"
-    >
+    <div className="relative pb-20">
       {/* Header */}
-      <div
-        style={{ backgroundColor: isDarkMode ? '#191919' : '#ffffff' }}
-        className="sticky top-0"
-      >
-        <div className="flex items-center px-4 py-3">
-          <button
-            onClick={() => navigate(-1)}
-            className={`p-2 rounded ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-          <h1 className="text-lg font-medium ml-2">软件使用条款</h1>
-        </div>
+      <div className={cn(
+        "sticky top-0 z-10 -mx-6 px-6 py-4 mb-6 flex items-center gap-4",
+        "bg-white/80 dark:bg-[#121212]/80 backdrop-blur-xl border-b border-black/5 dark:border-white/10"
+      )}>
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+        >
+          <ChevronLeft className="w-6 h-6" />
+        </button>
+        <h1 className="text-lg font-semibold tracking-tight">Terms of Use</h1>
       </div>
 
       {/* Content */}
-      <div className="p-4 space-y-4">
-        <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-          最后更新：2024年1月
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white/50 dark:bg-[#1e1e1e]/50 backdrop-blur-md rounded-2xl border border-black/5 dark:border-white/10 p-8 shadow-sm">
+           <div className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-6">
+             Last Updated: January 2024
+           </div>
+
+           <div className="space-y-8">
+             <section>
+               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">1. Acceptance of Terms</h2>
+               <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                 Welcome to BaYin. By using this software, you agree to comply with these terms of use. If you do not agree to these terms, please do not use the software.
+               </p>
+             </section>
+
+             <section>
+               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">2. License</h2>
+               <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                 BaYin is open-source software licensed under the MIT License. You are free to use, copy, modify, and distribute this software in accordance with the license terms.
+               </p>
+             </section>
+
+             <section>
+               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">3. User Responsibilities</h2>
+               <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                 You are responsible for ensuring that you have the legal right to play the music files you use with this software. BaYin is not responsible for user content.
+               </p>
+             </section>
+
+             <section>
+               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">4. Disclaimer</h2>
+               <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                 This software is provided "as is", without warranty of any kind, express or implied. The developers are not liable for any damages arising from the use of this software.
+               </p>
+             </section>
+           </div>
         </div>
-
-        <section className="space-y-2">
-          <h2 className="text-lg font-medium">1. 接受条款</h2>
-          <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-            欢迎使用八音音乐播放器。使用本软件即表示您同意遵守这些使用条款。如果您不同意这些条款，请不要使用本软件。
-          </p>
-        </section>
-
-        <section className="space-y-2">
-          <h2 className="text-lg font-medium">2. 许可授权</h2>
-          <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-            八音是一款开源软件，根据相应的开源许可证授权使用。您可以自由使用、复制、修改和分发本软件，但需遵守相关许可证的条款。
-          </p>
-        </section>
-
-        <section className="space-y-2">
-          <h2 className="text-lg font-medium">3. 用户责任</h2>
-          <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-            您有责任确保您使用本软件播放的音乐文件具有合法的版权或使用权。八音不对用户使用的内容承担责任。
-          </p>
-        </section>
-
-        <section className="space-y-2">
-          <h2 className="text-lg font-medium">4. 免责声明</h2>
-          <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-            本软件按"现状"提供，不提供任何形式的明示或暗示保证。开发者不对使用本软件造成的任何直接或间接损失负责。
-          </p>
-        </section>
-
-        <section className="space-y-2">
-          <h2 className="text-lg font-medium">5. 更新和修改</h2>
-          <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-            我们保留随时修改这些条款的权利。继续使用本软件即表示您接受修改后的条款。
-          </p>
-        </section>
-
-        <section className="space-y-2">
-          <h2 className="text-lg font-medium">6. 联系我们</h2>
-          <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-            如对这些条款有任何疑问，请通过GitHub联系我们。
-          </p>
-        </section>
       </div>
 
-      {/* Sidebar */}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
     </div>
   );

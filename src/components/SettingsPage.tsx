@@ -1,62 +1,68 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Menu, ChevronRight, Palette, HelpCircle, Download } from 'lucide-react';
+import { ChevronRight, Palette, HelpCircle, Download, Menu } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { useMusic } from '../context/MusicContext';
+import { cn } from '../components/ui/utils';
 
 export const SettingsPage = () => {
   const navigate = useNavigate();
-  const { isDarkMode } = useMusic();
+  const { isDarkMode, setMobileSidebarOpen } = useMusic();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const settingsItems = [
-    { icon: <Palette className="w-5 h-5" />, label: '用户界面', path: '/settings/interface' },
-    { icon: <HelpCircle className="w-5 h-5" />, label: '帮助与反馈', path: '/settings/help' },
-    { icon: <Download className="w-5 h-5" />, label: '更新软件', path: '/settings/update' },
+    { icon: <Palette className="w-5 h-5" />, label: 'User Interface', path: '/settings/interface', color: 'bg-blue-500' },
+    { icon: <HelpCircle className="w-5 h-5" />, label: 'Help & Feedback', path: '/settings/help', color: 'bg-purple-500' },
+    { icon: <Download className="w-5 h-5" />, label: 'Software Update', path: '/settings/update', color: 'bg-green-500' },
   ];
 
   return (
-    <div 
-      style={{ backgroundColor: isDarkMode ? '#0c0c0c' : '#f8f9fb' }}
-      className="relative min-h-screen"
-    >
+    <div className="relative pb-20">
       {/* Header */}
-      <div
-        style={{ backgroundColor: isDarkMode ? '#191919' : '#ffffff' }}
-        className="sticky top-0 z-10"
-      >
-        <div className="relative flex items-center justify-between px-4 py-3">
+      <div className={cn(
+        "sticky top-0 z-10 -mx-6 px-6 py-4 mb-6 flex items-center justify-between",
+        "bg-white/80 dark:bg-[#121212]/80 backdrop-blur-xl border-b border-black/5 dark:border-white/10"
+      )}>
+        <div className="flex items-center gap-4">
           <button
-            onClick={() => setSidebarOpen(true)}
-            className={`p-2 rounded lg:hidden ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
+            onClick={() => setMobileSidebarOpen(true)}
+            className="lg:hidden p-2 -ml-2 rounded-md hover:bg-black/5 dark:hover:bg-white/10"
           >
             <Menu className="w-6 h-6" />
           </button>
-          <h1 className="text-lg font-medium absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0">设置</h1>
-          <div className="w-10" />
+          <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
         </div>
       </div>
 
       {/* Content */}
-      <div className="p-4">
-        {settingsItems.map((item, index) => (
-          <button
-            key={index}
-            onClick={() => navigate(item.path)}
-            className={`w-full flex items-center justify-between px-4 py-4 border-b ${
-              isDarkMode ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-100 hover:bg-gray-50'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              {item.icon}
-              <span>{item.label}</span>
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white/50 dark:bg-[#1e1e1e]/50 backdrop-blur-md rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
+          {settingsItems.map((item, index) => (
+            <div key={index} className="relative">
+               <button
+                  onClick={() => navigate(item.path)}
+                  className={cn(
+                    "w-full flex items-center justify-between px-4 py-4 transition-colors",
+                    "hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={cn("p-1.5 rounded-md text-white shadow-sm", item.color)}>
+                       {item.icon}
+                    </div>
+                    <span className="font-medium text-gray-900 dark:text-white">{item.label}</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                </button>
+                {/* Separator */}
+                {index < settingsItems.length - 1 && (
+                   <div className="absolute bottom-0 left-14 right-0 h-[1px] bg-black/5 dark:bg-white/5" />
+                )}
             </div>
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        ))}
+          ))}
+        </div>
       </div>
 
-      {/* Sidebar */}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
     </div>
   );

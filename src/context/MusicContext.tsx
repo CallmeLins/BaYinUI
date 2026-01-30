@@ -55,6 +55,8 @@ interface MusicContextType {
   lyricsFontWeight: 'normal' | 'medium' | 'bold';
   queue: Song[];
   currentQueueIndex: number;
+  isMobileSidebarOpen: boolean;
+  setMobileSidebarOpen: (open: boolean) => void;
   playSong: (song: Song) => void;
   togglePlay: () => void;
   setProgress: (progress: number) => void;
@@ -96,7 +98,19 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgressState] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  
+  // Initialize dark mode from localStorage or system preference
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('bayin_theme');
+      if (saved) {
+        return saved === 'dark';
+      }
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
+
   const [hasScanned, setHasScanned] = useState(false);
   const [skipShortAudio, setSkipShortAudio] = useState(true);
   const [showCoverInList, setShowCoverInList] = useState(true);
@@ -105,6 +119,19 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
   const [lyricsFontWeight, setLyricsFontWeight] = useState<'normal' | 'medium' | 'bold'>('normal');
   const [queue, setQueue] = useState<Song[]>([]);
   const [currentQueueIndex, setCurrentQueueIndex] = useState(0);
+  const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  // Apply dark mode class to html element
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (isDarkMode) {
+      root.classList.add('dark');
+      localStorage.setItem('bayin_theme', 'dark');
+    } else {
+      root.classList.remove('dark');
+      localStorage.setItem('bayin_theme', 'light');
+    }
+  }, [isDarkMode]);
 
   // 监听音频时间更新
   useEffect(() => {
@@ -363,6 +390,8 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
         lyricsFontWeight,
         queue,
         currentQueueIndex,
+        isMobileSidebarOpen,
+        setMobileSidebarOpen,
         playSong,
         togglePlay,
         setProgress,

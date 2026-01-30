@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { ChevronLeft, Loader2 } from 'lucide-react';
+import { ChevronLeft, Loader2, CheckCircle, AlertCircle, Server, User, Lock } from 'lucide-react';
 import { useMusic } from '../context/MusicContext';
 import {
   testNavidromeConnection,
@@ -9,12 +9,14 @@ import {
   type ConnectionTestResult,
 } from '../services/navidrome';
 import { save, load } from '../services/storage';
+import { cn } from '../components/ui/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const NAVIDROME_CONFIG_KEY = 'navidromeConfig' as const;
 
 export const NavidromeConfigPage = () => {
   const navigate = useNavigate();
-  const { isDarkMode, setSongs } = useMusic();
+  const { setSongs } = useMusic();
   const [serverUrl, setServerUrl] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -23,14 +25,12 @@ export const NavidromeConfigPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
 
-  // 加载已保存的配置
   useEffect(() => {
     const loadConfig = async () => {
       const config = await load<NavidromeConfig | null>(NAVIDROME_CONFIG_KEY as never, null);
       if (config) {
         setServerUrl(config.serverUrl);
         setUsername(config.username);
-        // 密码不从存储中加载（安全考虑）
       }
     };
     loadConfig();
@@ -45,10 +45,7 @@ export const NavidromeConfigPage = () => {
   const handleTest = async () => {
     const config = getConfig();
     if (!config.serverUrl || !config.username || !config.password) {
-      setTestResult({
-        success: false,
-        message: '请填写完整信息',
-      });
+      setTestResult({ success: false, message: 'Please fill in all fields' });
       return;
     }
 
@@ -59,10 +56,7 @@ export const NavidromeConfigPage = () => {
       const result = await testNavidromeConnection(config);
       setTestResult(result);
     } catch (error) {
-      setTestResult({
-        success: false,
-        message: `测试失败: ${error}`,
-      });
+      setTestResult({ success: false, message: `Test failed: ${error}` });
     } finally {
       setIsTesting(false);
     }
@@ -71,30 +65,20 @@ export const NavidromeConfigPage = () => {
   const handleSave = async () => {
     const config = getConfig();
     if (!config.serverUrl || !config.username) {
-      setTestResult({
-        success: false,
-        message: '请填写服务器地址和用户名',
-      });
+      setTestResult({ success: false, message: 'Please fill in server URL and username' });
       return;
     }
 
     setIsSaving(true);
     try {
-      // 只保存 serverUrl 和 username，密码不持久化
       await save(NAVIDROME_CONFIG_KEY as never, {
         serverUrl: config.serverUrl,
         username: config.username,
-        password: '', // 不保存密码
+        password: '',
       });
-      setTestResult({
-        success: true,
-        message: '配置已保存',
-      });
+      setTestResult({ success: true, message: 'Configuration saved' });
     } catch (error) {
-      setTestResult({
-        success: false,
-        message: `保存失败: ${error}`,
-      });
+      setTestResult({ success: false, message: `Save failed: ${error}` });
     } finally {
       setIsSaving(false);
     }
@@ -103,10 +87,7 @@ export const NavidromeConfigPage = () => {
   const handleFetchSongs = async () => {
     const config = getConfig();
     if (!config.serverUrl || !config.username || !config.password) {
-      setTestResult({
-        success: false,
-        message: '请填写完整信息',
-      });
+      setTestResult({ success: false, message: 'Please fill in all fields' });
       return;
     }
 
@@ -115,183 +96,151 @@ export const NavidromeConfigPage = () => {
 
     try {
       const songs = await fetchNavidromeSongs(config);
-      // 将歌曲添加到 MusicContext
       setSongs(
         songs.map((s) => ({
           ...s,
           coverUrl: s.coverUrl || '',
-          // 对于 Navidrome 歌曲，保存配置信息用于后续流式播放
           filePath: JSON.stringify({ type: 'navidrome', songId: s.id, config }),
         }))
       );
-      setTestResult({
-        success: true,
-        message: `成功获取 ${songs.length} 首歌曲`,
-      });
-      // 延迟返回，让用户看到结果
+      setTestResult({ success: true, message: `Successfully fetched ${songs.length} songs` });
       setTimeout(() => navigate('/'), 1500);
     } catch (error) {
-      setTestResult({
-        success: false,
-        message: `获取失败: ${error}`,
-      });
+      setTestResult({ success: false, message: `Fetch failed: ${error}` });
     } finally {
       setIsFetching(false);
     }
   };
 
   return (
-    <div
-      style={{ backgroundColor: isDarkMode ? '#0c0c0c' : '#f8f9fb' }}
-      className="min-h-screen"
-    >
+    <div className="relative pb-20">
       {/* Header */}
-      <div
-        style={{ backgroundColor: isDarkMode ? '#191919' : '#ffffff' }}
-        className="sticky top-0"
-      >
-        <div className="flex items-center px-4 py-3">
-          <button
-            onClick={() => navigate(-1)}
-            className={`p-2 rounded ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-          <h1 className="text-lg font-medium ml-2">Navidrome 配置</h1>
-        </div>
+      <div className={cn(
+        "sticky top-0 z-10 -mx-6 px-6 py-4 mb-6 flex items-center gap-4",
+        "bg-white/80 dark:bg-[#121212]/80 backdrop-blur-xl border-b border-black/5 dark:border-white/10"
+      )}>
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+        >
+          <ChevronLeft className="w-6 h-6" />
+        </button>
+        <h1 className="text-lg font-semibold tracking-tight">Navidrome Config</h1>
       </div>
 
-      {/* Form */}
-      <div className="p-4 space-y-4">
-        <div>
-          <label
-            className={`block mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
-          >
-            服务器地址
-          </label>
-          <input
-            type="text"
-            value={serverUrl}
-            onChange={(e) => setServerUrl(e.target.value)}
-            placeholder="https://your-server.com"
-            className={`w-full px-4 py-2 rounded-lg border ${
-              isDarkMode
-                ? 'bg-gray-800 border-gray-700 text-white'
-                : 'bg-white border-gray-300 text-gray-900'
-            } outline-none focus:border-blue-500`}
-          />
+      {/* Content */}
+      <div className="max-w-md mx-auto space-y-6">
+        
+        {/* Form Card */}
+        <div className="bg-white/50 dark:bg-[#1e1e1e]/50 backdrop-blur-md rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden p-6 shadow-sm">
+           <div className="space-y-4">
+              
+              {/* Server URL */}
+              <div>
+                 <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Server URL</label>
+                 <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                       <Server className="w-4 h-4" />
+                    </div>
+                    <input
+                       type="text"
+                       value={serverUrl}
+                       onChange={(e) => setServerUrl(e.target.value)}
+                       placeholder="https://music.example.com"
+                       className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-black/20 border border-black/10 dark:border-white/10 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                    />
+                 </div>
+              </div>
+
+              {/* Username */}
+              <div>
+                 <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Username</label>
+                 <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                       <User className="w-4 h-4" />
+                    </div>
+                    <input
+                       type="text"
+                       value={username}
+                       onChange={(e) => setUsername(e.target.value)}
+                       placeholder="Username"
+                       className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-black/20 border border-black/10 dark:border-white/10 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                    />
+                 </div>
+              </div>
+
+              {/* Password */}
+              <div>
+                 <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Password</label>
+                 <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                       <Lock className="w-4 h-4" />
+                    </div>
+                    <input
+                       type="password"
+                       value={password}
+                       onChange={(e) => setPassword(e.target.value)}
+                       placeholder="Password"
+                       className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-black/20 border border-black/10 dark:border-white/10 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                    />
+                 </div>
+                 <p className="mt-1.5 text-xs text-gray-400">Password is not saved locally for security.</p>
+              </div>
+
+              {/* Test Button */}
+              <button
+                 onClick={handleTest}
+                 disabled={isTesting}
+                 className="w-full py-2.5 rounded-xl bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-sm font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                 {isTesting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Test Connection'}
+              </button>
+
+              {/* Result Message */}
+              <AnimatePresence>
+                 {testResult && (
+                    <motion.div
+                       initial={{ opacity: 0, height: 0 }}
+                       animate={{ opacity: 1, height: 'auto' }}
+                       exit={{ opacity: 0, height: 0 }}
+                       className={cn(
+                          "p-3 rounded-xl text-sm flex items-start gap-2",
+                          testResult.success 
+                             ? "bg-green-500/10 text-green-600 dark:text-green-400" 
+                             : "bg-red-500/10 text-red-600 dark:text-red-400"
+                       )}
+                    >
+                       {testResult.success ? <CheckCircle className="w-4 h-4 mt-0.5" /> : <AlertCircle className="w-4 h-4 mt-0.5" />}
+                       <div>
+                          <p className="font-medium">{testResult.message}</p>
+                          {testResult.serverVersion && (
+                             <p className="text-xs opacity-80 mt-0.5">Server v{testResult.serverVersion}</p>
+                          )}
+                       </div>
+                    </motion.div>
+                 )}
+              </AnimatePresence>
+           </div>
         </div>
 
-        <div>
-          <label
-            className={`block mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
-          >
-            用户名
-          </label>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="输入用户名"
-            className={`w-full px-4 py-2 rounded-lg border ${
-              isDarkMode
-                ? 'bg-gray-800 border-gray-700 text-white'
-                : 'bg-white border-gray-300 text-gray-900'
-            } outline-none focus:border-blue-500`}
-          />
+        {/* Action Buttons */}
+        <div className="flex gap-4">
+           <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="flex-1 py-3 rounded-xl bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 font-medium transition-colors flex items-center justify-center gap-2"
+           >
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Config'}
+           </button>
+           <button
+              onClick={handleFetchSongs}
+              disabled={isFetching}
+              className="flex-1 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-medium transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20"
+           >
+              {isFetching ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Fetch Library'}
+           </button>
         </div>
 
-        <div>
-          <label
-            className={`block mb-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
-          >
-            密码
-          </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="输入密码"
-            className={`w-full px-4 py-2 rounded-lg border ${
-              isDarkMode
-                ? 'bg-gray-800 border-gray-700 text-white'
-                : 'bg-white border-gray-300 text-gray-900'
-            } outline-none focus:border-blue-500`}
-          />
-          <p className={`mt-1 text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-            密码不会被保存，每次需要重新输入
-          </p>
-        </div>
-
-        <button
-          onClick={handleTest}
-          disabled={isTesting}
-          className={`w-full px-4 py-2 rounded-lg flex items-center justify-center ${
-            isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-          } disabled:opacity-50`}
-        >
-          {isTesting ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              测试中...
-            </>
-          ) : (
-            '测试连接'
-          )}
-        </button>
-
-        {testResult && (
-          <div
-            className={`p-4 rounded-lg ${
-              testResult.success
-                ? 'bg-green-500 bg-opacity-20 text-green-500'
-                : 'bg-red-500 bg-opacity-20 text-red-500'
-            }`}
-          >
-            <p>{testResult.message}</p>
-            {testResult.serverVersion && (
-              <p className="text-sm mt-1 opacity-80">服务器版本: {testResult.serverVersion}</p>
-            )}
-          </div>
-        )}
-
-        <div className="flex gap-3">
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className={`flex-1 px-4 py-2 rounded-lg flex items-center justify-center ${
-              isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-            } disabled:opacity-50`}
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                保存中...
-              </>
-            ) : (
-              '保存配置'
-            )}
-          </button>
-
-          <button
-            onClick={handleFetchSongs}
-            disabled={isFetching}
-            className={`flex-1 px-4 py-2 rounded-lg flex items-center justify-center ${
-              isDarkMode
-                ? 'bg-blue-600 hover:bg-blue-700'
-                : 'bg-blue-500 hover:bg-blue-600'
-            } text-white disabled:opacity-50`}
-          >
-            {isFetching ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                获取中...
-              </>
-            ) : (
-              '获取音乐库'
-            )}
-          </button>
-        </div>
       </div>
     </div>
   );

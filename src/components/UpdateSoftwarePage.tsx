@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, RefreshCw } from 'lucide-react';
 import { useMusic } from '../context/MusicContext';
 import { Sidebar } from './Sidebar';
+import { cn } from '../components/ui/utils';
 
 export const UpdateSoftwarePage = () => {
   const navigate = useNavigate();
@@ -10,41 +11,47 @@ export const UpdateSoftwarePage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div 
-      style={{ backgroundColor: isDarkMode ? '#0c0c0c' : '#f8f9fb' }}
-      className="min-h-screen"
-    >
+    <div className="relative pb-20">
       {/* Header */}
-      <div
-        style={{ backgroundColor: isDarkMode ? '#191919' : '#ffffff' }}
-        className="sticky top-0"
-      >
-        <div className="flex items-center px-4 py-3">
-          <button
-            onClick={() => navigate(-1)}
-            className={`p-2 rounded ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-          <h1 className="text-lg font-medium ml-2">更新软件</h1>
-        </div>
+      <div className={cn(
+        "sticky top-0 z-10 -mx-6 px-6 py-4 mb-6 flex items-center gap-4",
+        "bg-white/80 dark:bg-[#121212]/80 backdrop-blur-xl border-b border-black/5 dark:border-white/10"
+      )}>
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+        >
+          <ChevronLeft className="w-6 h-6" />
+        </button>
+        <h1 className="text-lg font-semibold tracking-tight">Software Update</h1>
       </div>
 
       {/* Content */}
-      <div className="p-4 text-center">
-        <p className={`mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-          当前版本：1.0.0
-        </p>
+      <div className="max-w-md mx-auto mt-12 text-center">
+        <div className="w-24 h-24 bg-gray-100 dark:bg-white/10 rounded-[22px] mx-auto mb-6 shadow-xl flex items-center justify-center">
+           <span className="text-4xl">🎵</span>
+        </div>
+        
+        <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">BaYin</h2>
+        <p className="text-gray-500 dark:text-gray-400 mb-8">Version 1.0.0</p>
+        
+        <div className="bg-white/50 dark:bg-[#1e1e1e]/50 backdrop-blur-md rounded-2xl border border-black/5 dark:border-white/10 p-6 mb-8">
+           <p className="text-sm text-gray-600 dark:text-gray-300">
+              Your software is up to date.
+           </p>
+        </div>
+
         <button
-          className={`px-6 py-2 rounded-lg ${
-            isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'
-          } text-white`}
+          className={cn(
+            "px-6 py-3 rounded-xl font-medium text-white shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 mx-auto",
+            "bg-blue-500 hover:bg-blue-600"
+          )}
         >
-          检查更新
+          <RefreshCw className="w-4 h-4" />
+          Check for Updates
         </button>
       </div>
 
-      {/* Sidebar */}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
     </div>
   );

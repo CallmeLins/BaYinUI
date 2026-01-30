@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { ChevronLeft, Heart, Coffee, Github } from 'lucide-react';
+import { ChevronLeft, Heart, Coffee, Github, Share2 } from 'lucide-react';
 import { useMusic } from '../context/MusicContext';
 import { Sidebar } from './Sidebar';
+import { cn } from '../components/ui/utils';
 
 export const DonatePage = () => {
   const navigate = useNavigate();
@@ -10,128 +11,98 @@ export const DonatePage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div 
-      style={{ backgroundColor: isDarkMode ? '#0c0c0c' : '#f8f9fb' }}
-      className="min-h-screen"
-    >
+    <div className="relative pb-20">
       {/* Header */}
-      <div
-        style={{ backgroundColor: isDarkMode ? '#191919' : '#ffffff' }}
-        className="sticky top-0"
-      >
-        <div className="flex items-center px-4 py-3">
-          <button
-            onClick={() => navigate(-1)}
-            className={`p-2 rounded ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-          <h1 className="text-lg font-medium ml-2">赞赏</h1>
-        </div>
+      <div className={cn(
+        "sticky top-0 z-10 -mx-6 px-6 py-4 mb-6 flex items-center gap-4",
+        "bg-white/80 dark:bg-[#121212]/80 backdrop-blur-xl border-b border-black/5 dark:border-white/10"
+      )}>
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+        >
+          <ChevronLeft className="w-6 h-6" />
+        </button>
+        <h1 className="text-lg font-semibold tracking-tight">Donate</h1>
       </div>
 
       {/* Content */}
-      <div className="p-4 space-y-6">
+      <div className="max-w-2xl mx-auto space-y-8">
+        
+        {/* Hero */}
         <div className="text-center py-8">
-          <div className="text-6xl mb-4">❤️</div>
-          <h2 className="text-2xl font-bold mb-3">支持八音的发展</h2>
-          <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            如果您喜欢八音，可以通过以下方式支持我们
+          <div className="text-6xl mb-4 animate-pulse">❤️</div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Support BaYin</h2>
+          <p className="text-gray-500 dark:text-gray-400">
+            If you enjoy using BaYin, consider supporting its development.
           </p>
         </div>
 
-        <div className="space-y-3">
-          <div
-            className={`p-6 rounded-lg border ${
-              isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-            }`}
-          >
-            <div className="flex items-start gap-4">
-              <div
-                className={`p-3 rounded-full ${
-                  isDarkMode ? 'bg-yellow-900' : 'bg-yellow-100'
-                } flex-shrink-0`}
-              >
-                <Coffee className={`w-6 h-6 ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`} />
+        {/* Support Options */}
+        <div className="grid gap-4">
+          {/* Coffee */}
+          <div className="bg-white/50 dark:bg-[#1e1e1e]/50 backdrop-blur-md rounded-2xl border border-black/5 dark:border-white/10 p-6 shadow-sm">
+            <div className="flex items-start gap-5">
+              <div className="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400">
+                <Coffee className="w-6 h-6" />
               </div>
               <div className="flex-1">
-                <h3 className="font-medium mb-2">请我喝杯咖啡</h3>
-                <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  您的赞赏将帮助我们继续开发和改进八音
+                <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-1">Buy me a coffee</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                  Your donation helps keep the project alive and motivates further development.
                 </p>
-                <div className="text-sm text-center p-4 border rounded-lg border-dashed">
-                  <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-                    赞赏二维码将在这里显示
-                  </p>
+                <div className="p-4 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-black/20 text-center">
+                  <p className="text-sm text-gray-400 font-medium">QR Code Placeholder</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <div
-            className={`p-6 rounded-lg border ${
-              isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-            }`}
-          >
-            <div className="flex items-start gap-4">
-              <div
-                className={`p-3 rounded-full ${
-                  isDarkMode ? 'bg-purple-900' : 'bg-purple-100'
-                } flex-shrink-0`}
-              >
-                <Github className={`w-6 h-6 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`} />
+          {/* GitHub Star */}
+          <div className="bg-white/50 dark:bg-[#1e1e1e]/50 backdrop-blur-md rounded-2xl border border-black/5 dark:border-white/10 p-6 shadow-sm">
+            <div className="flex items-start gap-5">
+              <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
+                <Github className="w-6 h-6" />
               </div>
               <div className="flex-1">
-                <h3 className="font-medium mb-2">Star 项目</h3>
-                <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  在GitHub上为项目点个Star，这是对我们最大的鼓励
+                <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-1">Star on GitHub</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                  Starring the project on GitHub is a great way to show your support and help others find it.
                 </p>
                 <a
                   href="https://github.com/CallmeLins"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg ${
-                    isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-                  }`}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-black text-white dark:bg-white dark:text-black text-sm font-medium hover:opacity-80 transition-opacity"
                 >
                   <Github className="w-4 h-4" />
-                  <span>前往 GitHub</span>
+                  <span>Go to GitHub</span>
                 </a>
               </div>
             </div>
           </div>
 
-          <div
-            className={`p-6 rounded-lg border ${
-              isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-            }`}
-          >
-            <div className="flex items-start gap-4">
-              <div
-                className={`p-3 rounded-full ${
-                  isDarkMode ? 'bg-blue-900' : 'bg-blue-100'
-                } flex-shrink-0`}
-              >
-                <Heart className={`w-6 h-6 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+          {/* Share */}
+          <div className="bg-white/50 dark:bg-[#1e1e1e]/50 backdrop-blur-md rounded-2xl border border-black/5 dark:border-white/10 p-6 shadow-sm">
+            <div className="flex items-start gap-5">
+              <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                <Share2 className="w-6 h-6" />
               </div>
               <div className="flex-1">
-                <h3 className="font-medium mb-2">分享推荐</h3>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  向朋友推荐八音，让更多人享受优质的音乐体验
+                <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-1">Share with Friends</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Tell your friends about BaYin and help our community grow.
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="text-center py-4">
-          <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            感谢您的支持！
-          </p>
-        </div>
+        <p className="text-center text-sm text-gray-400 dark:text-gray-500 pt-4">
+          Thank you for your support!
+        </p>
       </div>
 
-      {/* Sidebar */}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
     </div>
   );

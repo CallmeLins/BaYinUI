@@ -1,6 +1,11 @@
 import { useNavigate, useLocation } from 'react-router';
-import { X, Sun, Moon, Music2, LogOut, Volume2, Disc, Mic, Folder, ListMusic, ScanSearch, Database, BarChart3, Settings, Info } from 'lucide-react';
+import { 
+  Music2, Disc, Mic, ListMusic, ScanSearch, Database, Settings, Info, 
+  LogOut, Sun, Moon, Search
+} from 'lucide-react';
 import { useMusic } from '../context/MusicContext';
+import { motion } from 'framer-motion';
+import { cn } from '../components/ui/utils';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -10,121 +15,142 @@ interface SidebarProps {
 export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isDarkMode, toggleDarkMode } = useMusic();
+  const { isDarkMode, toggleDarkMode, isMobileSidebarOpen, setMobileSidebarOpen } = useMusic();
 
   const handleNavigation = (path: string) => {
     navigate(path);
     onClose();
+    setMobileSidebarOpen(false);
   };
 
-  // 在播放页面时隐藏侧边栏
   const isPlayerPage = location.pathname === '/player';
   if (isPlayerPage) return null;
 
-  // 在大屏幕上常驻显示，在小屏幕上根据isOpen显示
-  // 大屏幕：lg:block（始终显示，不需要isOpen）
-  // 小屏幕：isOpen控制显示
-  const shouldShowMobile = isOpen;
+  const shouldShowMobile = isOpen || isMobileSidebarOpen;
+
+  const handleClose = () => {
+    onClose();
+    setMobileSidebarOpen(false);
+  };
 
   return (
     <>
-      {/* Sidebar */}
+      {/* Sidebar Container */}
       <div
-        style={{ backgroundColor: isDarkMode ? '#191919' : '#ffffff' }}
-        className={`fixed top-0 left-0 bottom-0 w-64 shadow-lg overflow-y-auto scrollbar-thin transition-transform duration-300 z-30 ${
-          shouldShowMobile ? 'translate-x-0' : '-translate-x-full'
-        } lg:translate-x-0`}
+        className={cn(
+          "fixed top-0 left-0 bottom-0 w-64 z-30 transition-transform duration-300 ease-[cubic-bezier(0.25,1,0.5,1)]",
+          "bg-gray-100/60 dark:bg-[#1e1e1e]/60 backdrop-blur-2xl saturate-150",
+          "border-r border-black/5 dark:border-white/10 shadow-[1px_0_0_0_rgba(255,255,255,0.1)]",
+          shouldShowMobile ? 'translate-x-0' : '-translate-x-full',
+          "lg:translate-x-0"
+        )}
       >
-        <div className="p-6">
-          {/* Top action buttons */}
-          <div className="flex items-center gap-4 mb-8">
-            <button
-              className={`p-3 rounded-full ${
-                isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'
-              }`}
-              title="退出"
-            >
-              <LogOut className="w-5 h-5" />
-            </button>
-            <button
-              onClick={toggleDarkMode}
-              className={`p-3 rounded-full ${
-                isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'
-              }`}
-              title={isDarkMode ? '日间模式' : '夜间模式'}
-            >
-              {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
-            {/* 音效按钮暂时隐藏 */}
-            {/* <button
-              className={`p-3 rounded-full ${
-                isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'
-              }`}
-              title="音效"
-            >
-              <Volume2 className="w-5 h-5" />
-            </button> */}
-          </div>
+        {/* Top Actions & Drag Region */}
+        <div className="flex items-center justify-between px-3 pt-4 pb-2" data-tauri-drag-region>
+           <div className="flex gap-1">
+              <button
+                  onClick={toggleDarkMode}
+                  className="p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-gray-600 dark:text-gray-400"
+                  title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                >
+                  {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </button>
+              <button
+                  className="p-2 rounded-md hover:bg-red-500/10 hover:text-red-500 transition-colors text-gray-600 dark:text-gray-400"
+                  title="Logout"
+                >
+                  <LogOut className="w-4 h-4" />
+              </button>
+           </div>
+        </div>
 
-          {/* Library section */}
-          <div className="mb-8">
-            <div className="space-y-1">
+        {/* Search Input */}
+        <div className="px-3 mb-4">
+          <div className="relative group">
+            <Search className="absolute left-2.5 top-1.5 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+            <input 
+              type="text" 
+              placeholder="Search" 
+              className="w-full bg-white/50 dark:bg-black/20 border border-black/5 dark:border-white/10 rounded-[6px] py-1 pl-8 pr-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all placeholder:text-gray-400"
+            />
+          </div>
+        </div>
+
+        <div className="px-2 py-2 flex flex-col h-[calc(100%-120px)] overflow-y-auto scrollbar-hide">
+          
+          {/* Library Section */}
+          <div className="mb-6">
+            <h3 className="px-3 text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">Library</h3>
+            <div className="space-y-[1px]">
               <SidebarItem
-                icon={<Music2 className="w-5 h-5" />}
-                label="歌曲"
+                icon={<Music2 />}
+                label="Songs"
+                isActive={location.pathname === '/'}
                 onClick={() => handleNavigation('/')}
               />
               <SidebarItem
-                icon={<Disc className="w-5 h-5" />}
-                label="专辑"
+                icon={<Disc />}
+                label="Albums"
+                isActive={location.pathname === '/albums'}
                 onClick={() => handleNavigation('/albums')}
               />
               <SidebarItem
-                icon={<Mic className="w-5 h-5" />}
-                label="艺术家"
+                icon={<Mic />}
+                label="Artists"
+                isActive={location.pathname === '/artists'}
                 onClick={() => handleNavigation('/artists')}
               />
               <SidebarItem
-                icon={<ListMusic className="w-5 h-5" />}
-                label="歌单"
+                icon={<ListMusic />}
+                label="Playlists"
+                isActive={location.pathname === '/playlists'}
                 onClick={() => handleNavigation('/playlists')}
               />
             </div>
           </div>
 
-          {/* Settings section */}
-          <div className={`pt-6 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-            <div className="space-y-1">
+          {/* System Section */}
+          <div className="mb-6">
+            <h3 className="px-3 text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">System</h3>
+            <div className="space-y-[1px]">
               <SidebarItem
-                icon={<ScanSearch className="w-5 h-5" />}
-                label="扫描音乐"
+                icon={<ScanSearch />}
+                label="Scan Music"
+                isActive={location.pathname === '/scan'}
                 onClick={() => handleNavigation('/scan')}
               />
               <SidebarItem
-                icon={<Database className="w-5 h-5" />}
-                label="音乐库"
+                icon={<Database />}
+                label="Library Stats"
+                isActive={location.pathname === '/library'}
                 onClick={() => handleNavigation('/library')}
               />
               <SidebarItem
-                icon={<Settings className="w-5 h-5" />}
-                label="设置"
+                icon={<Settings />}
+                label="Settings"
+                isActive={location.pathname === '/settings'}
                 onClick={() => handleNavigation('/settings')}
               />
-              <SidebarItem
-                icon={<Info className="w-5 h-5" />}
-                label="关于"
+               <SidebarItem
+                icon={<Info />}
+                label="About"
+                isActive={location.pathname === '/about'}
                 onClick={() => handleNavigation('/about')}
               />
             </div>
           </div>
+
         </div>
       </div>
 
-      {/* Clickable area to close sidebar - only on mobile */}
+      {/* Backdrop for mobile */}
       {shouldShowMobile && (
-        <div
-          className="fixed inset-0 z-20 lg:hidden"
-          onClick={onClose}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-20 bg-black/20 backdrop-blur-sm lg:hidden"
+          onClick={handleClose}
         />
       )}
     </>
@@ -134,21 +160,28 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 interface SidebarItemProps {
   icon: React.ReactNode;
   label: string;
+  isActive?: boolean;
   onClick: () => void;
 }
 
-const SidebarItem = ({ icon, label, onClick }: SidebarItemProps) => {
-  const { isDarkMode } = useMusic();
-
+const SidebarItem = ({ icon, label, isActive, onClick }: SidebarItemProps) => {
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg ${
-        isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
-      } transition-colors`}
+      className={cn(
+        "w-full flex items-center gap-3 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 group relative",
+        isActive 
+          ? "bg-blue-500 text-white shadow-sm" 
+          : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
+      )}
     >
-      {icon}
-      <span>{label}</span>
+      <span className={cn(
+        "w-4 h-4 [&>svg]:w-4 [&>svg]:h-4 [&>svg]:stroke-[1.5px]",
+        isActive ? "text-white" : "text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-100"
+      )}>
+        {icon}
+      </span>
+      <span className="tracking-wide">{label}</span>
     </button>
   );
 };

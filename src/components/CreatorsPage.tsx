@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { ChevronLeft, Github, Code } from 'lucide-react';
 import { useMusic } from '../context/MusicContext';
 import { Sidebar } from './Sidebar';
+import { cn } from '../components/ui/utils';
 
 export const CreatorsPage = () => {
   const navigate = useNavigate();
@@ -12,63 +13,54 @@ export const CreatorsPage = () => {
   const creators = [
     {
       name: 'Lins',
-      role: '开发者',
+      role: 'Lead Developer',
       avatar: '👨‍💻',
       github: 'https://github.com/CallmeLins',
-      description: '八音音乐播放器的创建者和主要开发者',
+      description: 'Creator and main developer of BaYin Music Player.',
     },
   ];
 
   return (
-    <div 
-      style={{ backgroundColor: isDarkMode ? '#0c0c0c' : '#f8f9fb' }}
-      className="min-h-screen"
-    >
+    <div className="relative pb-20">
       {/* Header */}
-      <div
-        style={{ backgroundColor: isDarkMode ? '#191919' : '#ffffff' }}
-        className="sticky top-0"
-      >
-        <div className="flex items-center px-4 py-3">
-          <button
-            onClick={() => navigate(-1)}
-            className={`p-2 rounded ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-          <h1 className="text-lg font-medium ml-2">制作人员</h1>
-        </div>
+      <div className={cn(
+        "sticky top-0 z-10 -mx-6 px-6 py-4 mb-6 flex items-center gap-4",
+        "bg-white/80 dark:bg-[#121212]/80 backdrop-blur-xl border-b border-black/5 dark:border-white/10"
+      )}>
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+        >
+          <ChevronLeft className="w-6 h-6" />
+        </button>
+        <h1 className="text-lg font-semibold tracking-tight">Creators</h1>
       </div>
 
       {/* Content */}
-      <div className="p-4 space-y-4">
+      <div className="max-w-2xl mx-auto space-y-6">
         {creators.map((creator, index) => (
           <div
             key={index}
-            className={`p-6 rounded-lg border ${
-              isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-            }`}
+            className="bg-white/50 dark:bg-[#1e1e1e]/50 backdrop-blur-md rounded-2xl border border-black/5 dark:border-white/10 p-6 shadow-sm"
           >
-            <div className="flex items-start gap-4">
-              <div className="text-5xl">{creator.avatar}</div>
-              <div className="flex-1">
-                <h2 className="text-xl font-bold mb-1">{creator.name}</h2>
-                <p className={`text-sm mb-2 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
-                  {creator.role}
-                </p>
-                <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            <div className="flex items-start gap-5">
+              <div className="text-6xl bg-gray-100 dark:bg-white/10 rounded-full w-20 h-20 flex items-center justify-center shadow-inner">
+                 {creator.avatar}
+              </div>
+              <div className="flex-1 min-w-0 pt-1">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{creator.name}</h2>
+                <p className="text-sm font-medium text-blue-500 mb-2">{creator.role}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 leading-relaxed">
                   {creator.description}
                 </p>
                 <a
                   href={creator.github}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg ${
-                    isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-                  }`}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-black text-white dark:bg-white dark:text-black text-sm font-medium hover:opacity-80 transition-opacity"
                 >
                   <Github className="w-4 h-4" />
-                  <span>GitHub</span>
+                  <span>GitHub Profile</span>
                 </a>
               </div>
             </div>
@@ -76,32 +68,23 @@ export const CreatorsPage = () => {
         ))}
 
         {/* Thanks section */}
-        <div
-          className={`p-6 rounded-lg border ${
-            isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-          }`}
-        >
-          <h3 className="text-lg font-medium mb-3">特别感谢</h3>
-          <div className="space-y-2">
-            <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-              感谢所有为八音做出贡献的开发者和用户
-            </p>
-            <div className="flex items-center gap-2">
-              <Code className="w-4 h-4" />
-              <a
-                href="https://github.com/CallmeLins"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={isDarkMode ? 'text-blue-400' : 'text-blue-600'}
-              >
-                查看所有贡献者
-              </a>
-            </div>
-          </div>
+        <div className="bg-white/50 dark:bg-[#1e1e1e]/50 backdrop-blur-md rounded-2xl border border-black/5 dark:border-white/10 p-6">
+          <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Special Thanks</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            Thanks to all contributors and users who have helped make BaYin better.
+          </p>
+          <a
+            href="https://github.com/CallmeLins"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-blue-500 hover:underline text-sm font-medium"
+          >
+            <Code className="w-4 h-4" />
+            View all contributors
+          </a>
         </div>
       </div>
 
-      {/* Sidebar */}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
     </div>
   );
