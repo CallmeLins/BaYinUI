@@ -29,8 +29,8 @@ const MOCK_SONGS: ScannedSong[] = [
     filePath: '',
     fileSize: 45000000,
     coverUrl: undefined,
-    isHR: true,
-    isSQ: true,
+    isHr: true,
+    isSq: true,
   },
   {
     id: 'navidrome-2',
@@ -41,8 +41,8 @@ const MOCK_SONGS: ScannedSong[] = [
     filePath: '',
     fileSize: 12000000,
     coverUrl: undefined,
-    isHR: false,
-    isSQ: false,
+    isHr: false,
+    isSq: false,
   },
 ];
 

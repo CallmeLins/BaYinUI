@@ -268,12 +268,18 @@ export const PlayerBar = () => {
                       />
                       <div className="flex-1 min-w-0">
                         <div className={cn(
-                          "font-medium truncate",
+                          "font-medium truncate flex items-center gap-1.5",
                           index === currentQueueIndex
                             ? "text-blue-600 dark:text-blue-400"
                             : "text-gray-900 dark:text-white"
                         )}>
-                          {song.title}
+                          <span className="truncate">{song.title}</span>
+                          {song.isHr && (
+                            <span className="flex-shrink-0 text-[9px] px-1 py-0.5 bg-red-500 text-white rounded-[3px] font-bold tracking-wider">HR</span>
+                          )}
+                          {song.isSq && (
+                            <span className="flex-shrink-0 text-[9px] px-1 py-0.5 bg-yellow-500 text-white rounded-[3px] font-bold tracking-wider">SQ</span>
+                          )}
                         </div>
                         <div className="text-xs text-gray-500 dark:text-white/40 truncate">
                           {song.artist}

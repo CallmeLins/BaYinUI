@@ -362,8 +362,14 @@ export const PlayerPage = () => {
                      >
                         <img src={song.coverUrl} className="w-10 h-10 rounded-md object-cover bg-gray-200 dark:bg-white/5" />
                         <div className="flex-1 min-w-0">
-                           <div className={cn("font-medium truncate", index === currentQueueIndex ? "text-blue-600 dark:text-blue-400" : "text-gray-900 dark:text-white")}>
-                              {song.title}
+                           <div className={cn("font-medium truncate flex items-center gap-1.5", index === currentQueueIndex ? "text-blue-600 dark:text-blue-400" : "text-gray-900 dark:text-white")}>
+                              <span className="truncate">{song.title}</span>
+                              {song.isHr && (
+                                <span className="flex-shrink-0 text-[9px] px-1 py-0.5 bg-red-500 text-white rounded-[3px] font-bold tracking-wider">HR</span>
+                              )}
+                              {song.isSq && (
+                                <span className="flex-shrink-0 text-[9px] px-1 py-0.5 bg-yellow-500 text-white rounded-[3px] font-bold tracking-wider">SQ</span>
+                              )}
                            </div>
                            <div className="text-xs text-gray-500 dark:text-white/40 truncate">{song.artist}</div>
                         </div>

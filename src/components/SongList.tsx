@@ -66,10 +66,10 @@ export const SongList = ({ songs, selectionMode = false, selectedSongs = new Set
                   <span className="truncate text-sm font-medium leading-tight">
                     {song.title}
                   </span>
-                  {song.isHR && (
+                  {song.isHr && (
                     <span className="text-[9px] px-1 py-0.5 bg-red-500 text-white rounded-[3px] font-bold tracking-wider">HR</span>
                   )}
-                  {song.isSQ && (
+                  {song.isSq && (
                     <span className="text-[9px] px-1 py-0.5 bg-yellow-500 text-white rounded-[3px] font-bold tracking-wider">SQ</span>
                   )}
                 </div>

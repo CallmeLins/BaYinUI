@@ -150,8 +150,8 @@ export const ScanMusicPage = () => {
         album: s.album,
         coverUrl: s.coverUrl || '',
         duration: s.duration,
-        isHR: s.isHR,
-        isSQ: s.isSQ,
+        isHr: s.isHr,
+        isSq: s.isSq,
         fileSize: s.fileSize,
         filePath: s.filePath,
       }));

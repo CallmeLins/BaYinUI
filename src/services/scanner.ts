@@ -16,8 +16,8 @@ export interface ScannedSong {
   filePath: string;
   fileSize: number;
   coverUrl?: string;
-  isHR?: boolean;
-  isSQ?: boolean;
+  isHr?: boolean;
+  isSq?: boolean;
 }
 
 export interface ScanOptions {
@@ -42,8 +42,8 @@ const MOCK_SONGS: ScannedSong[] = [
     duration: 240,
     filePath: '/mock/path/song1.flac',
     fileSize: 35000000,
-    isHR: true,
-    isSQ: true,
+    isHr: true,
+    isSq: true,
   },
   {
     id: 'mock-2',
@@ -53,8 +53,8 @@ const MOCK_SONGS: ScannedSong[] = [
     duration: 180,
     filePath: '/mock/path/song2.mp3',
     fileSize: 8000000,
-    isHR: false,
-    isSQ: false,
+    isHr: false,
+    isSq: false,
   },
 ];
 

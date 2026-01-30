@@ -11,11 +11,11 @@ export const MusicLibraryPage = () => {
     let hq = 0, sq = 0, hiRes = 0, other = 0;
 
     songs.forEach(song => {
-      if (song.isHR && song.isSQ) {
+      if (song.isHr && song.isSq) {
         hiRes++;
-      } else if (song.isHR) {
+      } else if (song.isHr) {
         hq++;
-      } else if (song.isSQ) {
+      } else if (song.isSq) {
         sq++;
       } else {
         other++;

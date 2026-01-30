@@ -8,8 +8,8 @@ export interface Song {
   album: string;
   coverUrl: string;
   duration: number;
-  isHR?: boolean;
-  isSQ?: boolean;
+  isHr?: boolean;
+  isSq?: boolean;
   fileSize?: number;
   filePath?: string;
 }
@@ -286,7 +286,7 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
         album: '叶惠美',
         coverUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400',
         duration: 269,
-        isHR: true,
+        isHr: true,
       },
       {
         id: '2',
@@ -295,7 +295,7 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
         album: '魔杰座',
         coverUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400',
         duration: 223,
-        isSQ: true,
+        isSq: true,
       },
     ];
 
