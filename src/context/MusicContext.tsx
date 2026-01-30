@@ -46,6 +46,8 @@ interface MusicContextType {
   isPlaying: boolean;
   progress: number;
   duration: number;
+  volume: number;
+  isMuted: boolean;
   isDarkMode: boolean;
   hasScanned: boolean;
   skipShortAudio: boolean;
@@ -60,6 +62,8 @@ interface MusicContextType {
   playSong: (song: Song) => void;
   togglePlay: () => void;
   setProgress: (progress: number) => void;
+  setVolume: (volume: number) => void;
+  toggleMute: () => void;
   toggleDarkMode: () => void;
   scanMusic: () => void;
   shufflePlay: (songsToShuffle?: Song[]) => void;
@@ -121,6 +125,21 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
   const [currentQueueIndex, setCurrentQueueIndex] = useState(0);
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
+  // Volume state - initialize from localStorage
+  const [volume, setVolumeState] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('bayin_volume');
+      return saved ? parseFloat(saved) : 0.7;
+    }
+    return 0.7;
+  });
+  const [isMuted, setIsMuted] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('bayin_muted') === 'true';
+    }
+    return false;
+  });
+
   // Apply dark mode class to html element
   useEffect(() => {
     const root = window.document.documentElement;
@@ -132,6 +151,14 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem('bayin_theme', 'light');
     }
   }, [isDarkMode]);
+
+  // Apply volume to audio element
+  useEffect(() => {
+    const effectiveVolume = isMuted ? 0 : volume;
+    audioService.setVolume(effectiveVolume);
+    localStorage.setItem('bayin_volume', volume.toString());
+    localStorage.setItem('bayin_muted', isMuted.toString());
+  }, [volume, isMuted]);
 
   // 监听音频时间更新
   useEffect(() => {
@@ -235,6 +262,14 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
   const setProgress = useCallback((value: number) => {
     audioService.seek(value);
     setProgressState(value);
+  }, []);
+
+  const setVolume = useCallback((value: number) => {
+    setVolumeState(Math.max(0, Math.min(1, value)));
+  }, []);
+
+  const toggleMute = useCallback(() => {
+    setIsMuted(prev => !prev);
   }, []);
 
   const toggleDarkMode = () => {
@@ -381,6 +416,8 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
         isPlaying,
         progress,
         duration,
+        volume,
+        isMuted,
         isDarkMode,
         hasScanned,
         skipShortAudio,
@@ -395,6 +432,8 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
         playSong,
         togglePlay,
         setProgress,
+        setVolume,
+        toggleMute,
         toggleDarkMode,
         scanMusic,
         shufflePlay,

@@ -5,6 +5,7 @@ import { useMusic } from '../context/MusicContext';
 import { getLyrics, parseLrcLyrics, type LyricLine } from '../services/scanner';
 import { cn } from '../components/ui/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SongMenu } from './SongMenu';
 
 type PlayMode = 'shuffle' | 'sequence' | 'repeat-one';
 
@@ -30,6 +31,7 @@ export const PlayerPage = () => {
   const [playMode, setPlayMode] = useState<PlayMode>('sequence');
   const [showLyrics, setShowLyrics] = useState(false);
   const [queueOpen, setQueueOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [lyrics, setLyrics] = useState<LyricLine[]>([]);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
   const [isLyricsLoaded, setIsLyricsLoaded] = useState(false);
@@ -66,40 +68,42 @@ export const PlayerPage = () => {
     return progress >= lyric.time && (!nextLyric || progress < nextLyric.time);
   });
 
-  // Auto-scroll lyrics
-  useEffect(() => {
-    if (showLyrics && lyricsContainerRef.current && currentLyricIndex !== -1) {
-      const activeElement = lyricsContainerRef.current.children[currentLyricIndex] as HTMLElement;
-      if (activeElement) {
-        // Use 'auto' behavior for the first scroll to avoid "lag" visual, 'smooth' for updates
-        // However, 'smooth' is generally preferred for playback updates.
-        // To fix "lag" on switch, we can check if we just switched.
-        // For simplicity, let's try a direct scroll without timeout if possible, 
-        // or use requestAnimationFrame.
-        
-        requestAnimationFrame(() => {
-            activeElement.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center',
-            });
-        });
-      }
-    }
-  }, [currentLyricIndex, showLyrics, lyrics]);
+  // Get scroll target index (0 during intro, currentLyricIndex otherwise)
+  const scrollTargetIndex = lyrics.length === 0 ? -1 : (currentLyricIndex === -1 ? 0 : currentLyricIndex);
 
-  // Initial scroll when entering lyrics view
+  // Track last scrolled index to determine scroll behavior
+  const lastScrolledIndexRef = useRef<number>(-1);
+  const isFirstScrollRef = useRef(true);
+
+  // Reset on lyrics view change
   useEffect(() => {
-      if (showLyrics && lyricsContainerRef.current && currentLyricIndex !== -1) {
-          // Instant scroll on enter
-          const activeElement = lyricsContainerRef.current.children[currentLyricIndex] as HTMLElement;
-          if (activeElement) {
-             activeElement.scrollIntoView({
-               behavior: 'auto',
-               block: 'center',
-             });
-          }
-      }
-  }, [showLyrics]); // Only run when showLyrics changes to true
+    if (showLyrics) {
+      isFirstScrollRef.current = true;
+    } else {
+      lastScrolledIndexRef.current = -1;
+    }
+  }, [showLyrics]);
+
+  // Scroll lyrics based on progress
+  useEffect(() => {
+    if (!showLyrics || !lyricsContainerRef.current || lyrics.length === 0 || scrollTargetIndex === -1) {
+      return;
+    }
+
+    const activeElement = lyricsContainerRef.current.children[scrollTargetIndex] as HTMLElement;
+    if (!activeElement) return;
+
+    // Use instant scroll on first render, smooth scroll afterwards
+    const useInstantScroll = isFirstScrollRef.current;
+
+    activeElement.scrollIntoView({
+      behavior: useInstantScroll ? 'auto' : 'smooth',
+      block: 'center',
+    });
+
+    isFirstScrollRef.current = false;
+    lastScrolledIndexRef.current = scrollTargetIndex;
+  }, [scrollTargetIndex, showLyrics, lyrics, progress]); // Add progress to dependencies
 
   const formatDuration = (seconds: number) => {
     const totalSeconds = Math.floor(seconds);
@@ -195,12 +199,12 @@ export const PlayerPage = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="w-full h-full max-w-2xl relative cursor-pointer"
+                className="w-full h-full max-w-2xl relative cursor-pointer select-none"
                 onClick={() => setShowLyrics(false)}
               >
-                <div 
+                <div
                    ref={lyricsContainerRef}
-                   className="h-full overflow-y-auto scrollbar-hide text-center py-[40vh] space-y-8 mask-image-gradient"
+                   className="h-full overflow-y-auto scrollbar-hide text-center py-[40vh] space-y-8 select-none"
                    style={{ maskImage: 'linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)' }}
                 >
                    {lyrics.length > 0 ? (
@@ -309,7 +313,8 @@ export const PlayerPage = () => {
                 </button>
              </div>
 
-             <button 
+             <button
+                onClick={() => setMenuOpen(true)}
                 className="p-2 rounded-full text-white/40 hover:text-white/60 transition-colors"
              >
                 <MoreVertical className="w-5 h-5" />
@@ -334,13 +339,13 @@ export const PlayerPage = () => {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="absolute bottom-0 left-0 right-0 h-[70vh] bg-[#1e1e1e]/90 backdrop-blur-xl rounded-t-3xl border-t border-white/10 z-50 flex flex-col"
+              className="absolute bottom-0 left-0 right-0 h-[70vh] bg-white/95 dark:bg-[#1e1e1e]/90 backdrop-blur-xl rounded-t-3xl border-t border-black/10 dark:border-white/10 z-50 flex flex-col"
             >
-               <div className="p-4 border-b border-white/5 flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-white">Playing Next</h2>
-                  <button 
+               <div className="p-4 border-b border-black/5 dark:border-white/5 flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Playing Next</h2>
+                  <button
                      onClick={clearQueue}
-                     className="text-sm text-red-400 hover:text-red-300 font-medium"
+                     className="text-sm text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 font-medium"
                   >
                      Clear
                   </button>
@@ -352,19 +357,19 @@ export const PlayerPage = () => {
                         onClick={() => playFromQueue(index)}
                         className={cn(
                            "flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors",
-                           index === currentQueueIndex ? "bg-white/10" : "hover:bg-white/5"
+                           index === currentQueueIndex ? "bg-blue-50 dark:bg-white/10" : "hover:bg-gray-100 dark:hover:bg-white/5"
                         )}
                      >
-                        <img src={song.coverUrl} className="w-10 h-10 rounded-md object-cover bg-white/5" />
+                        <img src={song.coverUrl} className="w-10 h-10 rounded-md object-cover bg-gray-200 dark:bg-white/5" />
                         <div className="flex-1 min-w-0">
-                           <div className={cn("font-medium truncate", index === currentQueueIndex ? "text-blue-400" : "text-white")}>
+                           <div className={cn("font-medium truncate", index === currentQueueIndex ? "text-blue-600 dark:text-blue-400" : "text-gray-900 dark:text-white")}>
                               {song.title}
                            </div>
-                           <div className="text-xs text-white/40 truncate">{song.artist}</div>
+                           <div className="text-xs text-gray-500 dark:text-white/40 truncate">{song.artist}</div>
                         </div>
-                        <button 
+                        <button
                            onClick={(e) => { e.stopPropagation(); removeFromQueue(index); }}
-                           className="p-2 text-white/20 hover:text-red-400 transition-colors"
+                           className="p-2 text-gray-300 dark:text-white/20 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                         >
                            &times;
                         </button>
@@ -375,6 +380,13 @@ export const PlayerPage = () => {
           </>
         )}
       </AnimatePresence>
+
+      {/* Song Menu */}
+      <SongMenu
+        isOpen={menuOpen}
+        song={currentSong}
+        onClose={() => setMenuOpen(false)}
+      />
     </div>
   );
 };
