@@ -328,7 +328,7 @@ export const SongsPage = () => {
       {/* Sort Menu */}
       {sortMenuOpen && (
         <>
-          <div className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm" onClick={() => setSortMenuOpen(false)} />
+          <div data-no-drag className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm" onClick={() => setSortMenuOpen(false)} />
           <div className="fixed bottom-24 right-6 w-64 z-50 bg-white/90 dark:bg-[#323232]/90 backdrop-blur-xl rounded-xl shadow-2xl border border-black/5 dark:border-white/10 p-1.5 animate-fade-in">
             <h3 className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Sort By</h3>
             <div className="space-y-0.5">
@@ -359,7 +359,7 @@ export const SongsPage = () => {
 
       {/* Delete Confirmation */}
       {deleteConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+        <div data-no-drag className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="w-full max-w-sm bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-2xl p-6 border border-black/5 dark:border-white/10">
             <h3 className="text-lg font-semibold mb-2">Delete Songs?</h3>
             <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm">
@@ -385,7 +385,7 @@ export const SongsPage = () => {
 
       {/* Add to Playlist */}
       {addToPlaylistOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+        <div data-no-drag className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="w-full max-w-sm bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-2xl p-6 border border-black/5 dark:border-white/10 max-h-[80vh] flex flex-col">
             <h3 className="text-lg font-semibold mb-4">Add to Playlist</h3>
             

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { ChevronDown, MoreVertical, Shuffle, SkipBack, Play, Pause, SkipForward, Repeat, List, Repeat1, MessageSquare } from 'lucide-react';
 import { useMusic } from '../context/MusicContext';
@@ -6,8 +6,30 @@ import { getLyrics, parseLrcLyrics, type LyricLine } from '../services/scanner';
 import { cn } from '../components/ui/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SongMenu } from './SongMenu';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 type PlayMode = 'shuffle' | 'sequence' | 'repeat-one';
+
+// Check if element or its parents are interactive
+const isInteractiveElement = (element: HTMLElement | null): boolean => {
+  while (element) {
+    const tagName = element.tagName.toLowerCase();
+    if (
+      tagName === 'button' ||
+      tagName === 'a' ||
+      tagName === 'input' ||
+      tagName === 'textarea' ||
+      tagName === 'select' ||
+      element.getAttribute('role') === 'button' ||
+      element.getAttribute('data-no-drag') !== null ||
+      element.classList.contains('cursor-pointer')
+    ) {
+      return true;
+    }
+    element = element.parentElement;
+  }
+  return false;
+};
 
 // Get visible lyrics (current + surrounding lines, with placeholders to keep current in center)
 const getVisibleLyrics = (lyrics: LyricLine[], currentIndex: number, range: number = 6) => {
@@ -74,6 +96,13 @@ export const PlayerPage = () => {
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
   const desktopLyricsRef = useRef<HTMLDivElement>(null);
   const [isLyricsLoaded, setIsLyricsLoaded] = useState(false);
+
+  // Handle window dragging
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    if (isInteractiveElement(e.target as HTMLElement)) return;
+    getCurrentWindow().startDragging().catch(() => {});
+  }, []);
 
   // Load Lyrics
   useEffect(() => {
@@ -173,7 +202,10 @@ export const PlayerPage = () => {
   const visibleLyrics = getVisibleLyrics(lyrics, currentLyricIndex, 6);
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col bg-[#121212] text-white overflow-hidden font-sans antialiased selection:bg-blue-500/30">
+    <div
+      onMouseDown={handleMouseDown}
+      className="fixed inset-0 z-[100] flex flex-col bg-[#121212] text-white overflow-hidden font-sans antialiased"
+    >
 
       {/* --- Visual Physics: Background Layer --- */}
       {/* 1. Base Gradient */}
@@ -521,6 +553,7 @@ export const PlayerPage = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              data-no-drag
               className="absolute inset-0 bg-black/40 backdrop-blur-sm z-40"
               onClick={() => setQueueOpen(false)}
             />

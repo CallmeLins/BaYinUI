@@ -40,6 +40,7 @@ export const SongList = ({ songs, selectionMode = false, selectedSongs = new Set
             <div
               key={song.id}
               id={`song-${song.id}`}
+              data-no-drag
               className={cn(
                 "group relative flex items-center gap-2 px-1 py-2 cursor-default transition-colors duration-100",
                 // Zebra Striping

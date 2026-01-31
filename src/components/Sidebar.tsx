@@ -1,11 +1,12 @@
 import { useNavigate, useLocation } from 'react-router';
-import { 
-  Music2, Disc, Mic, ListMusic, ScanSearch, Database, Settings, Info, 
+import {
+  Music2, Disc, Mic, ListMusic, ScanSearch, Database, Settings, Info,
   LogOut, Sun, Moon, Search
 } from 'lucide-react';
 import { useMusic } from '../context/MusicContext';
 import { motion } from 'framer-motion';
 import { cn } from '../components/ui/utils';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -21,6 +22,14 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     navigate(path);
     onClose();
     setMobileSidebarOpen(false);
+  };
+
+  const handleExit = async () => {
+    try {
+      await getCurrentWindow().close();
+    } catch (e) {
+      console.error('Failed to close:', e);
+    }
   };
 
   const isPlayerPage = location.pathname === '/player';
@@ -45,8 +54,8 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           "lg:translate-x-0"
         )}
       >
-        {/* Top Actions & Drag Region */}
-        <div className="flex items-center justify-between px-3 pt-4 pb-2" data-tauri-drag-region>
+        {/* Top Actions - extra padding on desktop for title bar */}
+        <div className="flex items-center justify-between px-3 pt-4 lg:pt-10 pb-2">
            <div className="flex gap-1">
               <button
                   onClick={toggleDarkMode}
@@ -56,8 +65,9 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                   {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
               <button
+                  onClick={handleExit}
                   className="p-2 rounded-md hover:bg-red-500/10 hover:text-red-500 transition-colors text-gray-600 dark:text-gray-400"
-                  title="Logout"
+                  title="Exit"
                 >
                   <LogOut className="w-4 h-4" />
               </button>
@@ -149,6 +159,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          data-no-drag
           className="fixed inset-0 z-20 bg-black/20 backdrop-blur-sm lg:hidden"
           onClick={handleClose}
         />

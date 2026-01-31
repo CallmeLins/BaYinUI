@@ -38,6 +38,7 @@ export const SongMenu = ({ isOpen, song, onClose }: SongMenuProps) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            data-no-drag
             className="absolute inset-0 bg-black/20 backdrop-blur-sm"
             onClick={onClose}
           />

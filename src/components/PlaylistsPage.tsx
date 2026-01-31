@@ -163,7 +163,7 @@ export const PlaylistsPage = () => {
       {/* Playlist Menu Modal */}
       <AnimatePresence>
         {menuPlaylistId && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm" onClick={() => setMenuPlaylistId(null)}>
+          <div data-no-drag className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm" onClick={() => setMenuPlaylistId(null)}>
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -200,7 +200,7 @@ export const PlaylistsPage = () => {
 
       {/* Create/Edit Dialog */}
       {(showCreateDialog || showEditDialog) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+        <div data-no-drag className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -245,7 +245,7 @@ export const PlaylistsPage = () => {
 
       {/* Delete Dialog */}
       {showDeleteDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+        <div data-no-drag className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -280,6 +280,7 @@ export const PlaylistsPage = () => {
       {sortMenuOpen && (
         <>
           <div
+            data-no-drag
             className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm"
             onClick={() => setSortMenuOpen(false)}
           />

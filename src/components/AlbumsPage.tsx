@@ -127,6 +127,7 @@ export const AlbumsPage = () => {
       {sortMenuOpen && (
         <>
           <div
+            data-no-drag
             className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm"
             onClick={() => setSortMenuOpen(false)}
           />
