@@ -143,34 +143,34 @@ export const SongsPage = () => {
     <div className="relative pb-20">
       {/* Sticky Glass Header */}
       <div className={cn(
-        "sticky top-0 z-10 -mx-6 px-6 py-3 mb-2 flex items-center justify-between",
-        "bg-white/80 dark:bg-[#121212]/80 backdrop-blur-xl border-b border-black/5 dark:border-white/10"
+        "sticky top-0 z-10 -mx-6 px-6 py-4 mb-2 flex items-center justify-between",
+        "bg-white/85 dark:bg-[#121212]/85 backdrop-blur-xl saturate-150 border-b border-black/5 dark:border-white/10 transition-colors duration-300"
       )}>
         <div className="flex items-center gap-4">
           <button 
             onClick={() => setMobileSidebarOpen(true)}
-            className="lg:hidden p-2 -ml-2 rounded-md hover:bg-black/5 dark:hover:bg-white/10"
+            className="lg:hidden p-2 -ml-2 rounded-md hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
           >
-            <Menu className="w-6 h-6" />
+            <Menu className="w-6 h-6 text-gray-900 dark:text-white" />
           </button>
-          <h1 className="text-2xl font-semibold tracking-tight">Songs</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Songs</h1>
           {hasScanned && (
-            <span className="text-sm text-gray-500 dark:text-gray-400 font-medium hidden sm:inline-block">
+            <span className="text-sm text-gray-500 dark:text-gray-400 font-medium hidden sm:inline-block pt-1">
               {songs.length} songs
             </span>
           )}
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <button
             onClick={() => navigate('/search')}
-            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+            className="p-2.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-gray-600 dark:text-gray-300"
           >
             <Search className="w-5 h-5" />
           </button>
           <button
             onClick={() => setSortMenuOpen(true)}
-            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+            className="p-2.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-gray-600 dark:text-gray-300"
           >
             <MoreVertical className="w-5 h-5" />
           </button>
@@ -179,75 +179,71 @@ export const SongsPage = () => {
 
       {/* Toolbar */}
       {hasScanned && (
-        <div className="flex items-center gap-2 mb-4 px-2">
+        <div className="flex items-center gap-3 mb-6 px-1">
           {!selectionMode ? (
             <>
               <button
                 onClick={handleShufflePlay}
-                className="flex items-center gap-2 px-4 py-1.5 rounded-md bg-blue-500 hover:bg-blue-600 text-white shadow-sm transition-all active:scale-95"
+                className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/10 text-blue-600 dark:text-blue-400 hover:bg-gray-200 dark:hover:bg-white/15 transition-all active:scale-95"
+                title="Shuffle All"
               >
-                <Shuffle className="w-4 h-4" />
-                <span className="text-sm font-medium">Shuffle</span>
-              </button>
-              <div className="flex-1" />
-              <button
-                onClick={() => setSortMenuOpen(true)}
-                className="p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300"
-              >
-                <ArrowUpDown className="w-4 h-4" />
+                <Shuffle className="w-5 h-5" />
               </button>
               <button 
                 onClick={() => setSelectionMode(true)}
-                className="p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300"
+                className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/10 text-blue-600 dark:text-blue-400 hover:bg-gray-200 dark:hover:bg-white/15 transition-all active:scale-95"
+                title="Select Songs"
               >
-                <CheckSquare className="w-4 h-4" />
+                <CheckSquare className="w-5 h-5" />
               </button>
             </>
           ) : (
-            <>
+            <div className="flex-1 flex items-center gap-2 bg-blue-50 dark:bg-blue-500/10 p-1.5 rounded-xl border border-blue-100 dark:border-blue-500/20">
               <button
                 onClick={() => {
                   setSelectionMode(false);
                   setSelectedSongs(new Set());
                 }}
-                className="p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/10"
+                className="p-2 rounded-lg hover:bg-blue-200/50 dark:hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 transition-colors"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
-              <span className="text-sm font-medium">
+              <span className="text-sm font-semibold text-blue-900 dark:text-blue-100 flex-1 text-center">
                 {selectedSongs.size} Selected
               </span>
               <button
                 onClick={toggleSelectAll}
-                className="text-sm px-3 py-1.5 rounded-md text-blue-500 hover:bg-blue-500/10 font-medium ml-2"
+                className="text-xs px-3 py-1.5 rounded-lg bg-white dark:bg-white/10 text-blue-600 dark:text-blue-300 font-semibold shadow-sm border border-blue-100 dark:border-white/5"
               >
-                {selectedSongs.size === songs.length ? 'Deselect All' : 'Select All'}
+                {selectedSongs.size === songs.length ? 'None' : 'All'}
               </button>
-              <div className="flex-1" />
+              
+              <div className="w-[1px] h-6 bg-blue-200 dark:bg-white/10 mx-1" />
+
               <div className="flex items-center gap-1">
                 <button
                   onClick={handlePlaySelected}
                   disabled={selectedSongs.size === 0}
-                  className="p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-30"
+                  className="p-2 rounded-lg hover:bg-blue-200/50 dark:hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 disabled:opacity-30 transition-colors"
                 >
-                  <Play className="w-4 h-4" />
+                  <Play className="w-5 h-5 fill-current" />
                 </button>
                 <button
                   onClick={() => setAddToPlaylistOpen(true)}
                   disabled={selectedSongs.size === 0}
-                  className="p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-30"
+                  className="p-2 rounded-lg hover:bg-blue-200/50 dark:hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 disabled:opacity-30 transition-colors"
                 >
-                  <ListPlus className="w-4 h-4" />
+                  <ListPlus className="w-5 h-5" />
                 </button>
                 <button
                   onClick={() => setDeleteConfirmOpen(true)}
                   disabled={selectedSongs.size === 0}
-                  className="p-2 rounded-md hover:bg-red-500/10 text-red-500 disabled:opacity-30"
+                  className="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/20 text-red-500 dark:text-red-400 disabled:opacity-30 transition-colors"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-5 h-5" />
                 </button>
               </div>
-            </>
+            </div>
           )}
         </div>
       )}

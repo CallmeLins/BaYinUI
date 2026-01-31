@@ -170,50 +170,63 @@ export const PlayerPage = () => {
   const visibleLyrics = getVisibleLyrics(lyrics, currentLyricIndex, 6);
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col bg-black text-white overflow-hidden">
+    <div className="fixed inset-0 z-[100] flex flex-col bg-[#121212] text-white overflow-hidden font-sans antialiased selection:bg-blue-500/30">
 
-      {/* Dynamic Background */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
+      {/* --- Visual Physics: Background Layer --- */}
+      {/* 1. Base Gradient */}
+      <div className="absolute inset-0 bg-gradient-to-b from-gray-900 to-black z-0" />
+      
+      {/* 2. Dynamic Glassmorphism Background */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <motion.div
           key={currentSong.id}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 1 }}
+          transition={{ duration: 1.5 }}
           className="absolute inset-0"
         >
+           {/* The Image Source */}
            <img
              src={currentSong.coverUrl}
              alt=""
-             className="w-full h-full object-cover opacity-60 blur-3xl scale-125"
+             className="w-full h-full object-cover scale-110"
            />
-           <div className="absolute inset-0 bg-black/40 backdrop-blur-3xl" />
+           {/* The "Vibrancy 3.0" Filter Stack */}
+           <div className="absolute inset-0 bg-black/60 backdrop-blur-[100px] saturate-150" />
+           
+           {/* Noise Texture for Realism */}
+           <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay" 
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} 
+           />
         </motion.div>
       </div>
 
-      {/* Main Content */}
+      {/* --- Main Window Shell --- */}
       <div className="relative z-10 flex flex-col h-full">
 
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 flex-shrink-0">
+        {/* Window Header (Draggable Area) */}
+        <div className="flex items-center justify-between px-6 py-5 flex-shrink-0">
           <button
             onClick={handleBack}
-            className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors z-20"
+            className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors z-20 active:scale-95 duration-200"
           >
-            <ChevronDown className="w-6 h-6 text-white/80" />
+            <ChevronDown className="w-6 h-6 text-white/90 drop-shadow-md" />
           </button>
-          <div className="flex flex-col items-center pointer-events-none">
-             <span className="text-xs font-medium text-white/50 uppercase tracking-widest">Now Playing</span>
+          
+          <div className="flex flex-col items-center pointer-events-none opacity-80">
+             <span className="text-[11px] font-semibold text-white/60 uppercase tracking-[0.2em] drop-shadow-sm">Now Playing</span>
           </div>
+          
           <button
             onClick={() => setQueueOpen(true)}
-            className="p-2 -mr-2 rounded-full hover:bg-white/10 transition-colors z-20"
+            className="p-2 -mr-2 rounded-full hover:bg-white/10 transition-colors z-20 active:scale-95 duration-200"
           >
-            <List className="w-6 h-6 text-white/80" />
+            <List className="w-6 h-6 text-white/90 drop-shadow-md" />
           </button>
         </div>
 
-        {/* Center Area - Responsive Layout */}
-        <div className="flex-1 flex items-center justify-center px-4 md:px-8 min-h-0 relative">
+        {/* --- Center Stage: Responsive Layout --- */}
+        <div className="flex-1 flex items-center justify-center px-6 md:px-12 lg:px-20 min-h-0 relative w-full max-w-[1400px] mx-auto">
 
           {/* Mobile Layout: Cover or Lyrics (toggle) */}
           <div className="md:hidden w-full h-full flex flex-col items-center justify-center">
@@ -221,17 +234,20 @@ export const PlayerPage = () => {
               {!showLyrics ? (
                 <motion.div
                   key="cover"
-                  initial={{ opacity: 0, scale: 0.9 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 25 }}
-                  className="w-full max-w-sm aspect-square relative group cursor-pointer"
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 220, damping: 25 }}
+                  className="w-full max-w-[340px] aspect-square relative group cursor-pointer"
                   onClick={() => setShowLyrics(true)}
                 >
+                  {/* Physical Depth Shadow */}
+                  <div className="absolute inset-4 rounded-[24px] shadow-[0_35px_60px_-15px_rgba(0,0,0,0.6)]" />
+                  
                   <img
                     src={currentSong.coverUrl}
                     alt={currentSong.title}
-                    className="w-full h-full rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] object-cover border border-white/10"
+                    className="relative w-full h-full rounded-[24px] object-cover border border-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2)]"
                   />
                 </motion.div>
               ) : (
@@ -255,8 +271,10 @@ export const PlayerPage = () => {
                               <p
                                  key={idx}
                                  className={cn(
-                                    "text-xl font-bold transition-all duration-500 px-4",
-                                    isActive ? "text-white scale-110 blur-0" : "text-white/30 blur-[1px] scale-100"
+                                    "text-2xl font-bold transition-all duration-500 px-4 leading-relaxed tracking-tight",
+                                    isActive 
+                                      ? "text-white scale-105 blur-0 drop-shadow-lg" 
+                                      : "text-white/30 blur-[1.5px] scale-95"
                                  )}
                               >
                                  {lyric.text}
@@ -265,8 +283,8 @@ export const PlayerPage = () => {
                         })
                      ) : (
                         <div className="h-full flex items-center justify-center">
-                          <p className="text-white/50 text-xl">
-                              {isLyricsLoaded ? "No lyrics available" : "Loading lyrics..."}
+                          <p className="text-white/40 text-lg font-medium tracking-wide">
+                              {isLyricsLoaded ? "No lyrics available" : "Loading..."}
                           </p>
                         </div>
                      )}
@@ -276,113 +294,151 @@ export const PlayerPage = () => {
             </AnimatePresence>
           </div>
 
-          {/* Desktop/Tablet Layout: Cover + Lyrics side by side */}
-          <div className="hidden md:flex w-full max-w-5xl items-center gap-8 lg:gap-12">
-            {/* Left: Cover */}
-            <div className="flex-shrink-0 w-[280px] lg:w-[320px] xl:w-[360px] aspect-square">
+          {/* Desktop/Tablet Layout: Split View "Bento" Style */}
+          <div className="hidden md:flex w-full h-[65vh] lg:h-[70vh] items-center gap-12 lg:gap-20 xl:gap-24">
+            
+            {/* Left Pane: Album Art & Info */}
+            <div className="flex-1 flex flex-col items-end justify-center max-w-[45%]">
               <motion.div
                 key={currentSong.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ type: "spring", stiffness: 200, damping: 25 }}
-                className="w-full h-full"
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ type: "spring", stiffness: 180, damping: 24 }}
+                className="relative w-full max-w-[420px] aspect-square"
               >
+                {/* Visual Physics: Deep Ambient Shadow */}
+                <div className="absolute inset-6 bg-black/40 rounded-[32px] blur-2xl translate-y-8" />
+                
+                {/* The Cover Art */}
                 <img
                   src={currentSong.coverUrl}
                   alt={currentSong.title}
-                  className="w-full h-full rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] object-cover border border-white/10"
+                  className="relative w-full h-full rounded-[32px] object-cover shadow-[0_0_0_1px_rgba(255,255,255,0.1),0_20px_40px_-12px_rgba(0,0,0,0.5)]"
                 />
+                
+                {/* Top Bezel Highlight (Studio Lighting) */}
+                <div className="absolute inset-0 rounded-[32px] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25)] pointer-events-none" />
               </motion.div>
+
+              {/* Desktop Song Info (Left Aligned under art) */}
+              <div className="w-full max-w-[420px] mt-8 pl-1">
+                <motion.h1 
+                  key={currentSong.title}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-3xl lg:text-4xl font-bold text-white tracking-tight leading-tight drop-shadow-md truncate"
+                >
+                  {currentSong.title}
+                </motion.h1>
+                <motion.p 
+                  key={currentSong.artist}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="text-xl text-white/60 font-medium mt-2 tracking-wide truncate"
+                >
+                  {currentSong.artist}
+                </motion.p>
+              </div>
             </div>
 
-            {/* Right: Lyrics (limited lines, same height as cover) */}
-            <div className="flex-1 min-w-0 h-[280px] lg:h-[320px] xl:h-[360px] overflow-hidden flex items-center">
+            {/* Right Pane: Lyrics Stream */}
+            <div className="flex-1 h-full flex items-center justify-start max-w-[55%] relative">
+               {/* Glass Container for Lyrics (Optional: adds separation) */}
+               <div className="absolute inset-y-0 -left-8 right-0 bg-gradient-to-r from-transparent via-white/[0.02] to-transparent opacity-0 lg:opacity-100 pointer-events-none" />
+
               <div
                 ref={desktopLyricsRef}
-                className="w-full space-y-4 select-none text-center"
-                style={{ maskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)' }}
+                className="w-full h-full overflow-hidden flex flex-col justify-center text-left pl-4 lg:pl-8"
+                style={{ maskImage: 'linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)' }}
               >
                 {lyrics.length > 0 ? (
-                  <AnimatePresence mode="popLayout">
-                    {visibleLyrics.map((lyric) => {
-                      const isActive = lyric.originalIndex === currentLyricIndex;
-                      if (lyric.isPlaceholder) {
+                  <div className="space-y-6 lg:space-y-8">
+                    <AnimatePresence mode="popLayout">
+                      {visibleLyrics.map((lyric) => {
+                        const isActive = lyric.originalIndex === currentLyricIndex;
+                        if (lyric.isPlaceholder) {
+                          return (
+                            <div key={`placeholder-${lyric.originalIndex}`} className="h-[2em] lg:h-[2.5em]" />
+                          );
+                        }
                         return (
                           <motion.p
                             key={lyric.originalIndex}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 0 }}
-                            exit={{ opacity: 0 }}
-                            className="text-lg lg:text-xl xl:text-2xl leading-relaxed h-[1.75em]"
+                            layout
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ 
+                              opacity: isActive ? 1 : 0.3, 
+                              x: 0,
+                              scale: isActive ? 1 : 0.98,
+                              filter: isActive ? 'blur(0px)' : 'blur(1px)'
+                            }}
+                            exit={{ opacity: 0, x: 20 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                            className={cn(
+                              "text-2xl lg:text-3xl xl:text-4xl font-bold transition-colors duration-300 leading-tight tracking-tight origin-left cursor-default",
+                              isActive ? "text-white drop-shadow-lg" : "text-white/40 hover:text-white/60"
+                            )}
                           >
-                            &nbsp;
+                            {lyric.text}
                           </motion.p>
                         );
-                      }
-                      return (
-                        <motion.p
-                          key={lyric.originalIndex}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -20 }}
-                          transition={{ duration: 0.3 }}
-                          className={cn(
-                            "text-lg lg:text-xl xl:text-2xl font-semibold transition-all duration-300 leading-relaxed",
-                            isActive
-                              ? "text-white"
-                              : "text-white/30"
-                          )}
-                        >
-                          {lyric.text}
-                        </motion.p>
-                      );
-                    })}
-                  </AnimatePresence>
+                      })}
+                    </AnimatePresence>
+                  </div>
                 ) : (
-                  <p className="text-white/40 text-lg text-center">
-                    {isLyricsLoaded ? "No lyrics available" : "Loading lyrics..."}
-                  </p>
+                  <div className="flex items-center justify-center h-full w-full">
+                    <p className="text-white/30 text-2xl font-medium tracking-wide animate-pulse">
+                      {isLyricsLoaded ? "Instrumental / No Lyrics" : "Loading..."}
+                    </p>
+                  </div>
                 )}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Bottom Controls */}
-        <div className="px-6 md:px-8 pb-8 md:pb-12 pt-4 md:pt-6 w-full max-w-3xl mx-auto flex-shrink-0">
+        {/* --- Bottom Controls Area --- */}
+        <div className="px-6 md:px-12 pb-8 md:pb-10 pt-6 w-full max-w-4xl mx-auto flex-shrink-0 z-20">
 
-          {/* Song Info */}
-          <div className="flex items-center justify-between mb-4 md:mb-6">
+          {/* Mobile Song Info (Hidden on Desktop) */}
+          <div className="md:hidden flex items-center justify-between mb-6">
              <div className="flex-1 min-w-0">
-                <h1 className="text-xl md:text-2xl font-bold text-white truncate mb-1">{currentSong.title}</h1>
-                <p className="text-base md:text-lg text-white/60 truncate">{currentSong.artist}</p>
+                <h1 className="text-2xl font-bold text-white truncate mb-1 tracking-tight">{currentSong.title}</h1>
+                <p className="text-lg text-white/60 truncate font-medium">{currentSong.artist}</p>
              </div>
-             {/* Lyrics toggle button - only show on mobile */}
              <button
                 onClick={() => setShowLyrics(!showLyrics)}
                 className={cn(
-                   "md:hidden p-2.5 rounded-full transition-colors ml-4",
-                   showLyrics ? "bg-white text-black" : "bg-white/10 text-white hover:bg-white/20"
+                   "p-3 rounded-full transition-all shadow-lg",
+                   showLyrics 
+                    ? "bg-white text-black shadow-white/20" 
+                    : "bg-white/10 text-white hover:bg-white/20 border border-white/5"
                 )}
              >
                 <MessageSquare className="w-5 h-5 fill-current" />
              </button>
           </div>
 
-          {/* Progress Bar */}
-          <div className="mb-6 md:mb-8 group">
+          {/* Progress Bar (macOS Slider Style) */}
+          <div className="mb-8 group relative">
+            {/* Hover Glow Effect */}
+            <div className="absolute -inset-y-2 -inset-x-0 bg-white/5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-md" />
+            
             <input
               type="range"
               min="0"
               max={duration || currentSong.duration}
               value={progress}
               onChange={(e) => setProgress(parseInt(e.target.value))}
-              className="w-full h-1.5 bg-white/20 rounded-full appearance-none cursor-pointer accent-white hover:h-2 transition-all"
+              className="relative w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-white hover:h-1.5 focus:outline-none z-10"
               style={{
-                background: `linear-gradient(to right, white 0%, white ${(progress / (duration || currentSong.duration)) * 100}%, rgba(255,255,255,0.2) ${(progress / (duration || currentSong.duration)) * 100}%, rgba(255,255,255,0.2) 100%)`,
+                background: `linear-gradient(to right, white 0%, white ${(progress / (duration || currentSong.duration)) * 100}%, rgba(255,255,255,0.15) ${(progress / (duration || currentSong.duration)) * 100}%, rgba(255,255,255,0.15) 100%)`,
               }}
             />
-            <div className="flex justify-between mt-2 text-xs font-medium text-white/40 group-hover:text-white/60 transition-colors">
+            {/* Custom Thumb (Simulated via CSS or just stick to accent-white for native feel) */}
+            
+            <div className="flex justify-between mt-3 text-xs font-semibold text-white/40 group-hover:text-white/70 transition-colors tracking-wide font-mono">
               <span>{formatDuration(progress)}</span>
               <span>{formatDuration(duration || currentSong.duration)}</span>
             </div>
@@ -393,43 +449,45 @@ export const PlayerPage = () => {
              <button
                 onClick={togglePlayMode}
                 className={cn(
-                   "p-2 rounded-full transition-colors",
-                   playMode !== 'sequence' ? "text-blue-400 bg-blue-400/10" : "text-white/40 hover:text-white/60"
+                   "p-2.5 rounded-lg transition-all duration-200 active:scale-95",
+                   playMode !== 'sequence' 
+                    ? "text-blue-400 bg-blue-500/10 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.2)]" 
+                    : "text-white/30 hover:text-white/60 hover:bg-white/5"
                 )}
              >
                 {playMode === 'shuffle' ? <Shuffle className="w-5 h-5" /> : playMode === 'repeat-one' ? <Repeat1 className="w-5 h-5" /> : <Repeat className="w-5 h-5" />}
              </button>
 
-             <div className="flex items-center gap-6 md:gap-8">
+             <div className="flex items-center gap-8 md:gap-12">
                 <button
                    onClick={playPrevious}
-                   className="text-white hover:text-white/70 transition-colors active:scale-95"
+                   className="text-white/80 hover:text-white transition-colors active:scale-90 duration-200"
                 >
-                   <SkipBack className="w-8 h-8 md:w-9 md:h-9 fill-current" />
+                   <SkipBack className="w-9 h-9 md:w-10 md:h-10 fill-current drop-shadow-sm" />
                 </button>
 
                 <button
                    onClick={togglePlay}
-                   className="w-16 h-16 md:w-20 md:h-20 bg-white text-black rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg shadow-white/10"
+                   className="w-16 h-16 md:w-20 md:h-20 bg-white text-black rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.3)] border border-white/50"
                 >
                    {isPlaying ? (
-                      <Pause className="w-7 h-7 md:w-8 md:h-8 fill-current" />
+                      <Pause className="w-7 h-7 md:w-9 md:h-9 fill-current" />
                    ) : (
-                      <Play className="w-7 h-7 md:w-8 md:h-8 fill-current ml-1" />
+                      <Play className="w-7 h-7 md:w-9 md:h-9 fill-current ml-1" />
                    )}
                 </button>
 
                 <button
                    onClick={playNext}
-                   className="text-white hover:text-white/70 transition-colors active:scale-95"
+                   className="text-white/80 hover:text-white transition-colors active:scale-90 duration-200"
                 >
-                   <SkipForward className="w-8 h-8 md:w-9 md:h-9 fill-current" />
+                   <SkipForward className="w-9 h-9 md:w-10 md:h-10 fill-current drop-shadow-sm" />
                 </button>
              </div>
 
              <button
                 onClick={() => setMenuOpen(true)}
-                className="p-2 rounded-full text-white/40 hover:text-white/60 transition-colors"
+                className="p-2.5 rounded-lg text-white/30 hover:text-white/60 hover:bg-white/5 transition-all active:scale-95"
              >
                 <MoreVertical className="w-5 h-5" />
              </button>
@@ -437,7 +495,7 @@ export const PlayerPage = () => {
         </div>
       </div>
 
-      {/* Queue Sheet */}
+      {/* Queue Sheet (Glassmorphism Modal) */}
       <AnimatePresence>
         {queueOpen && (
           <>
@@ -445,7 +503,7 @@ export const PlayerPage = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/50 backdrop-blur-sm z-40"
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm z-40"
               onClick={() => setQueueOpen(false)}
             />
             <motion.div
@@ -453,43 +511,58 @@ export const PlayerPage = () => {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="absolute bottom-0 left-0 right-0 h-[70vh] bg-white/95 dark:bg-[#1e1e1e]/90 backdrop-blur-xl rounded-t-3xl border-t border-black/10 dark:border-white/10 z-50 flex flex-col"
+              className="absolute bottom-0 left-0 right-0 h-[75vh] bg-[#1e1e1e]/80 backdrop-blur-2xl rounded-t-[32px] border-t border-white/10 shadow-[0_-20px_40px_rgba(0,0,0,0.5)] z-50 flex flex-col"
             >
-               <div className="p-4 border-b border-black/5 dark:border-white/5 flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Playing Next</h2>
+               {/* Handle Bar */}
+               <div className="w-full flex justify-center pt-3 pb-1">
+                 <div className="w-12 h-1.5 bg-white/20 rounded-full" />
+               </div>
+
+               <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-white tracking-wide">Playing Next</h2>
                   <button
                      onClick={clearQueue}
-                     className="text-sm text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 font-medium"
+                     className="text-sm text-red-400 hover:text-red-300 font-medium px-3 py-1 rounded-full hover:bg-red-500/10 transition-colors"
                   >
                      Clear
                   </button>
                </div>
-               <div className="flex-1 overflow-y-auto scrollbar-thin p-2">
+               <div className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-1">
                   {queue.map((song, index) => (
                      <div
                         key={index}
                         onClick={() => playFromQueue(index)}
                         className={cn(
-                           "flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors",
-                           index === currentQueueIndex ? "bg-blue-50 dark:bg-white/10" : "hover:bg-gray-100 dark:hover:bg-white/5"
+                           "flex items-center gap-4 p-3 rounded-xl cursor-pointer transition-all duration-200 group",
+                           index === currentQueueIndex 
+                            ? "bg-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]" 
+                            : "hover:bg-white/5"
                         )}
                      >
-                        <img src={song.coverUrl} className="w-10 h-10 rounded-md object-cover bg-gray-200 dark:bg-white/5" />
+                        <div className="relative w-12 h-12 flex-shrink-0">
+                           <img src={song.coverUrl} className="w-full h-full rounded-lg object-cover shadow-sm" />
+                           {index === currentQueueIndex && (
+                             <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center backdrop-blur-[1px]">
+                               <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                             </div>
+                           )}
+                        </div>
+                        
                         <div className="flex-1 min-w-0">
-                           <div className={cn("font-medium truncate flex items-center gap-1.5", index === currentQueueIndex ? "text-blue-600 dark:text-blue-400" : "text-gray-900 dark:text-white")}>
+                           <div className={cn("font-medium truncate flex items-center gap-2 text-base", index === currentQueueIndex ? "text-white" : "text-white/90")}>
                               <span className="truncate">{song.title}</span>
                               {song.isHr && (
-                                <span className="flex-shrink-0 text-[9px] px-1 py-0.5 bg-red-500 text-white rounded-[3px] font-bold tracking-wider">HR</span>
+                                <span className="flex-shrink-0 text-[9px] px-1.5 py-0.5 bg-red-500/80 text-white rounded-[4px] font-bold tracking-wider border border-red-400/20">HR</span>
                               )}
                               {song.isSq && (
-                                <span className="flex-shrink-0 text-[9px] px-1 py-0.5 bg-yellow-500 text-white rounded-[3px] font-bold tracking-wider">SQ</span>
+                                <span className="flex-shrink-0 text-[9px] px-1.5 py-0.5 bg-yellow-500/80 text-white rounded-[4px] font-bold tracking-wider border border-yellow-400/20">SQ</span>
                               )}
                            </div>
-                           <div className="text-xs text-gray-500 dark:text-white/40 truncate">{song.artist}</div>
+                           <div className="text-sm text-white/50 truncate mt-0.5">{song.artist}</div>
                         </div>
                         <button
                            onClick={(e) => { e.stopPropagation(); removeFromQueue(index); }}
-                           className="p-2 text-gray-300 dark:text-white/20 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                           className="p-2 text-white/20 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
                         >
                            &times;
                         </button>

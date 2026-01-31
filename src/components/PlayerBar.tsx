@@ -109,14 +109,14 @@ export const PlayerBar = () => {
            />
         </div>
 
-        <div className="flex items-center justify-between px-4 py-3 h-[72px]">
+        <div className="relative flex items-center justify-between px-4 py-3 h-[72px]">
 
-          {/* Left: Song Info */}
-          <div className="flex items-center gap-3 w-1/3 min-w-0">
+          {/* Left: Song Info - Flexible width */}
+          <div className="flex items-center gap-3 flex-1 min-w-0 mr-2">
             {currentSong ? (
               <motion.div
                 layoutId="current-song-cover"
-                className="relative group cursor-pointer"
+                className="relative group cursor-pointer flex-shrink-0"
                 onClick={() => navigate('/player')}
               >
                 <img
@@ -127,7 +127,7 @@ export const PlayerBar = () => {
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-[6px]" />
               </motion.div>
             ) : (
-              <div className="w-12 h-12 rounded-[6px] bg-gray-200 dark:bg-white/10 flex items-center justify-center shadow-inner">
+              <div className="w-12 h-12 rounded-[6px] bg-gray-200 dark:bg-white/10 flex items-center justify-center shadow-inner flex-shrink-0">
                 <Music2 className="w-5 h-5 text-gray-400" />
               </div>
             )}
@@ -142,11 +142,15 @@ export const PlayerBar = () => {
             </div>
           </div>
 
-          {/* Center: Controls */}
-          <div className="flex items-center justify-center gap-4 w-1/3">
+          {/* Center: Controls - Absolute Center on Desktop, Right aligned on Mobile */}
+          <div className={cn(
+            "flex items-center gap-4",
+            "md:absolute md:left-1/2 md:-translate-x-1/2", // Desktop: Absolute Center
+            "flex-none" // Mobile: Natural flow
+          )}>
             <button
               onClick={handlePrevious}
-              className="p-2 rounded-full text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-all active:scale-95"
+              className="hidden md:block p-2 rounded-full text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-all active:scale-95"
               disabled={!currentSong}
             >
               <SkipBack className="w-5 h-5 fill-current" />
@@ -169,15 +173,15 @@ export const PlayerBar = () => {
 
             <button
               onClick={handleNext}
-              className="p-2 rounded-full text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-all active:scale-95"
+              className="hidden md:block p-2 rounded-full text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-all active:scale-95"
               disabled={!currentSong}
             >
               <SkipForward className="w-5 h-5 fill-current" />
             </button>
           </div>
 
-          {/* Right: Volume / Extra */}
-          <div className="flex items-center justify-end gap-2 w-1/3">
+          {/* Right: Volume / Extra - Hidden on Mobile */}
+          <div className="hidden md:flex items-center justify-end gap-2 flex-1">
              <button
                 onClick={() => setQueueOpen(true)}
                 className={cn(
