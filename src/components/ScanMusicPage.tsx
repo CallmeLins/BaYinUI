@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { Menu, Folder, ScanSearch, Loader2, X, Music, Check, AlertCircle, CheckCircle, Cloud } from 'lucide-react';
+import { Menu, Folder, ScanSearch, Loader2, X, Music, Check, AlertCircle, CheckCircle, Cloud, FolderSearch } from 'lucide-react';
 import { Sidebar } from './Sidebar';
+import { FolderBrowser } from './FolderBrowser';
 import { useMusic } from '../context/MusicContext';
+import { usePlatform } from '../hooks/usePlatform';
 import {
   selectDirectory,
   scanMusicFiles,
   getAndroidMusicDirectories,
-  getCurrentPlatform,
 } from '../services/scanner';
 import { fetchNavidromeSongs, type NavidromeConfig } from '../services/navidrome';
 import { load } from '../services/storage';
-import type { Platform } from '../services/tauri';
 import { cn } from '../components/ui/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -62,13 +62,14 @@ export const ScanMusicPage = () => {
     setHasScanned,
     setMobileSidebarOpen,
   } = useMusic();
+  const { platform, isMobile } = usePlatform();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedDirs, setSelectedDirs] = useState<string[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
-  const [platform, setPlatform] = useState<Platform>('browser');
   const [androidDirs, setAndroidDirs] = useState<string[]>([]);
   const [navidromeConfig, setNavidromeConfig] = useState<NavidromeConfig | null>(null);
+  const [folderBrowserOpen, setFolderBrowserOpen] = useState(false);
 
   useEffect(() => {
     const savedDirs = localStorage.getItem(STORAGE_KEY_DIRS);
@@ -90,9 +91,7 @@ export const ScanMusicPage = () => {
 
   useEffect(() => {
     const init = async () => {
-      const p = await getCurrentPlatform();
-      setPlatform(p);
-      if (p === 'android') {
+      if (platform === 'android') {
         const dirs = await getAndroidMusicDirectories();
         setAndroidDirs(dirs);
       }
@@ -101,7 +100,7 @@ export const ScanMusicPage = () => {
       setNavidromeConfig(config);
     };
     init();
-  }, []);
+  }, [platform]);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info') => {
     setToast({ message, type });
@@ -131,6 +130,12 @@ export const ScanMusicPage = () => {
     setSelectedDirs(newDirs);
     if (newDirs.length === 0) {
       localStorage.removeItem(STORAGE_KEY_DIRS);
+    }
+  };
+
+  const handleFolderBrowserSelect = (path: string) => {
+    if (!selectedDirs.includes(path)) {
+      setSelectedDirs([...selectedDirs, path]);
     }
   };
 
@@ -335,12 +340,13 @@ export const ScanMusicPage = () => {
               </div>
             )}
 
+            {/* Add custom folder button */}
             <button
-              onClick={handleSelectFolder}
+              onClick={() => isAndroid ? setFolderBrowserOpen(true) : handleSelectFolder()}
               className="w-full py-3 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 text-gray-500 hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-sm font-medium flex items-center justify-center gap-2"
             >
-              <Folder className="w-4 h-4" />
-              {isAndroid ? 'Browse Other Folder' : 'Add Folder'}
+              {isAndroid ? <FolderSearch className="w-4 h-4" /> : <Folder className="w-4 h-4" />}
+              {isAndroid ? 'Browse Folders' : 'Add Folder'}
             </button>
           </div>
         </section>
@@ -420,6 +426,13 @@ export const ScanMusicPage = () => {
       </div>
 
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+      {/* Android Folder Browser */}
+      <FolderBrowser
+        isOpen={folderBrowserOpen}
+        onClose={() => setFolderBrowserOpen(false)}
+        onSelect={handleFolderBrowserSelect}
+      />
     </div>
   );
 };

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { ChevronDown, MoreVertical, Shuffle, SkipBack, Play, Pause, SkipForward, Repeat, List, Repeat1, MessageSquare } from 'lucide-react';
 import { useMusic } from '../context/MusicContext';
+import { usePlatform } from '../hooks/usePlatform';
 import { getLyrics, parseLrcLyrics, type LyricLine } from '../services/scanner';
 import { cn } from '../components/ui/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -87,6 +88,7 @@ export const PlayerPage = () => {
     lyricsTextAlign,
     lyricsFontWeight,
   } = useMusic();
+  const { isMobile, insets } = usePlatform();
 
   const [playMode, setPlayMode] = useState<PlayMode>('sequence');
   const [showLyrics, setShowLyrics] = useState(false);
@@ -193,8 +195,15 @@ export const PlayerPage = () => {
     }
   };
 
+  // Redirect to home if no song is playing
+  useEffect(() => {
+    if (!currentSong) {
+      navigate('/');
+    }
+  }, [currentSong, navigate]);
+
+  // Don't render anything while redirecting
   if (!currentSong) {
-    navigate('/');
     return null;
   }
 
@@ -203,8 +212,9 @@ export const PlayerPage = () => {
 
   return (
     <div
-      onMouseDown={handleMouseDown}
+      onMouseDown={!isMobile ? handleMouseDown : undefined}
       className="fixed inset-0 z-[100] flex flex-col bg-[#121212] text-white overflow-hidden font-sans antialiased"
+      style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
     >
 
       {/* --- Visual Physics: Background Layer --- */}

@@ -4,6 +4,7 @@ import {
   LogOut, Sun, Moon, Search
 } from 'lucide-react';
 import { useMusic } from '../context/MusicContext';
+import { usePlatform } from '../hooks/usePlatform';
 import { motion } from 'framer-motion';
 import { cn } from '../components/ui/utils';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -17,6 +18,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isDarkMode, toggleDarkMode, isMobileSidebarOpen, setMobileSidebarOpen } = useMusic();
+  const { isMobile, insets } = usePlatform();
 
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -54,9 +56,12 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           "lg:translate-x-0"
         )}
       >
-        {/* Top Actions - extra padding on desktop for title bar */}
-        <div className="flex items-center justify-between px-3 pt-4 lg:pt-10 pb-2">
-           <div className="flex gap-1">
+        {/* Top Actions — dynamic padding per platform */}
+        <div
+          className="flex items-center justify-between px-3 pb-2"
+          style={{ paddingTop: isMobile ? insets.top + 12 : undefined }}
+        >
+           <div className={cn("flex gap-1", !isMobile && "pt-4 lg:pt-10")}>
               <button
                   onClick={toggleDarkMode}
                   className="p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-gray-600 dark:text-gray-400"

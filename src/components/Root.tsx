@@ -3,6 +3,7 @@ import { PlayerBar } from './PlayerBar';
 import { Sidebar } from './Sidebar';
 import { useMusic } from '../context/MusicContext';
 import { useScrollbar } from '../hooks/useScrollbar';
+import { usePlatform } from '../hooks/usePlatform';
 import { cn } from '../components/ui/utils';
 import { useState, useEffect, useCallback } from 'react';
 import { Minus, Square, X, Copy } from 'lucide-react';
@@ -34,36 +35,30 @@ export const Root = () => {
   const { isDarkMode } = useMusic();
   const location = useLocation();
   const scrollRef = useScrollbar<HTMLDivElement>();
+  const { isMobile, isDesktop, insets } = usePlatform();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
 
   const isPlayerPage = location.pathname === '/player';
 
-  // Handle window dragging on mouse down
+  // Handle window dragging on mouse down (desktop only)
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    // Only handle left mouse button
     if (e.button !== 0) return;
-
-    // Check if clicked on interactive element
     if (isInteractiveElement(e.target as HTMLElement)) return;
-
-    // Start dragging
     getCurrentWindow().startDragging().catch(() => {});
   }, []);
 
   // Check if window is maximized
   useEffect(() => {
+    if (isMobile) return;
     const checkMaximized = async () => {
       try {
         const maximized = await getCurrentWindow().isMaximized();
         setIsMaximized(maximized);
-      } catch (e) {
-        // Ignore errors (e.g., in browser)
-      }
+      } catch (e) {}
     };
     checkMaximized();
 
-    // Listen for resize to update maximized state
     const unlisten = getCurrentWindow().onResized(async () => {
       try {
         const maximized = await getCurrentWindow().isMaximized();
@@ -74,7 +69,7 @@ export const Root = () => {
     return () => {
       unlisten.then(fn => fn());
     };
-  }, []);
+  }, [isMobile]);
 
   const handleMinimize = async () => {
     try {
@@ -102,21 +97,22 @@ export const Root = () => {
 
   return (
     <div
-      onMouseDown={handleMouseDown}
+      onMouseDown={!isMobile ? handleMouseDown : undefined}
       className={cn(
         "h-screen flex flex-col overflow-hidden font-sans antialiased",
         "bg-white dark:bg-[#121212] text-gray-900 dark:text-white",
         "bg-noise"
       )}
     >
+      {/* Mobile Status Bar Spacer — height driven by usePlatform insets */}
+      {isMobile && !isPlayerPage && insets.top > 0 && (
+        <div className="flex-shrink-0 bg-white dark:bg-[#121212]" style={{ height: insets.top }} />
+      )}
 
       {/* Custom Title Bar - Desktop Only */}
-      {!isPlayerPage && (
+      {!isPlayerPage && isDesktop && (
         <div className="hidden lg:flex h-8 flex-shrink-0 items-center justify-end bg-gray-100/80 dark:bg-[#1a1a1a]/80 backdrop-blur-sm border-b border-black/5 dark:border-white/5 select-none pl-64">
-          {/* Spacer */}
           <div className="flex-1 h-full" />
-
-          {/* Window controls */}
           <div className="flex items-center h-full">
             <button
               onClick={handleMinimize}
@@ -152,8 +148,8 @@ export const Root = () => {
         ref={scrollRef}
         className={cn(
           "flex-1 overflow-y-auto scrollbar-thin",
-          !isPlayerPage && "lg:pl-64", // Push content when sidebar is fixed
-          !isPlayerPage && "pb-[72px]" // PlayerBar height (only if not player page)
+          !isPlayerPage && isDesktop && "lg:pl-64",
+          !isPlayerPage && "pb-[72px]"
         )}
       >
          <div className={cn("min-h-full animate-fade-in", !isPlayerPage && "px-6 pb-6")}>

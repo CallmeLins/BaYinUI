@@ -42,7 +42,7 @@ export const SongList = ({ songs, selectionMode = false, selectedSongs = new Set
               id={`song-${song.id}`}
               data-no-drag
               className={cn(
-                "group relative flex items-center gap-2 px-1 py-2 cursor-default transition-colors duration-100",
+                "group relative flex items-center gap-2 pl-2 pr-1 py-2 cursor-default transition-colors duration-100",
                 // Zebra Striping
                 index % 2 === 0 ? "bg-transparent" : "bg-black/[0.02] dark:bg-white/[0.02]",
                 // Hover State

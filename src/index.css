@@ -90,6 +90,9 @@
     user-select: none;
     /* Disable context menu */
     -webkit-touch-callout: none;
+    /* Ensure body fills entire viewport */
+    min-height: 100vh;
+    min-height: 100dvh;
   }
   /* Allow selection in input fields */
   input, textarea {

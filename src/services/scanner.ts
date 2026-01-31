@@ -33,6 +33,12 @@ export interface ScanProgress {
   currentFile: string;
 }
 
+export interface DirectoryEntry {
+  name: string;
+  path: string;
+  is_dir: boolean;
+}
+
 // Mock 数据用于浏览器环境开发
 const MOCK_SONGS: ScannedSong[] = [
   {
@@ -88,6 +94,26 @@ export async function getAndroidMusicDirectories(): Promise<string[]> {
     }
   }
   return ANDROID_MUSIC_DIRECTORIES;
+}
+
+/**
+ * 列出目录内容（用于文件夹浏览器）
+ */
+export async function listDirectories(path: string): Promise<DirectoryEntry[]> {
+  if (isTauri()) {
+    try {
+      return await invoke<DirectoryEntry[]>('list_directories', { path });
+    } catch (e) {
+      console.error('Failed to list directories:', e);
+      return [];
+    }
+  }
+  // 浏览器环境返回模拟数据
+  mockLog('scanner', 'listDirectories', path);
+  return [
+    { name: 'Music', path: `${path}/Music`, is_dir: true },
+    { name: 'Download', path: `${path}/Download`, is_dir: true },
+  ];
 }
 
 /**
