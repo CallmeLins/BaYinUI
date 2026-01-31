@@ -63,9 +63,7 @@ export const ArtistDetailPage = () => {
       </div>
 
       {/* Alphabet scroller */}
-      <div className="fixed right-2 top-1/2 -translate-y-1/2 z-20">
-        <AlphabetScroller items={artistSongs.map(s => ({ id: s.id, name: s.title }))} />
-      </div>
+      <AlphabetScroller items={artistSongs.map(s => ({ id: s.id, name: s.title }))} />
     </div>
   );
 };

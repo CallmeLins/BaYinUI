@@ -60,7 +60,10 @@ export const PlayerPage = () => {
     clearQueue,
     playNext,
     playPrevious,
-    playFromQueue
+    playFromQueue,
+    lyricsFontSize,
+    lyricsTextAlign,
+    lyricsFontWeight,
   } = useMusic();
 
   const [playMode, setPlayMode] = useState<PlayMode>('sequence');
@@ -261,7 +264,10 @@ export const PlayerPage = () => {
                 >
                   <div
                      ref={lyricsContainerRef}
-                     className="h-full overflow-y-auto scrollbar-hide text-center py-[40vh] space-y-8 select-none"
+                     className={cn(
+                       "h-full overflow-y-auto scrollbar-hide py-[40vh] space-y-8 select-none",
+                       lyricsTextAlign ? "text-center" : "text-left px-6"
+                     )}
                      style={{ maskImage: 'linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)' }}
                   >
                      {lyrics.length > 0 ? (
@@ -271,11 +277,15 @@ export const PlayerPage = () => {
                               <p
                                  key={idx}
                                  className={cn(
-                                    "text-2xl font-bold transition-all duration-500 px-4 leading-relaxed tracking-tight",
-                                    isActive 
-                                      ? "text-white scale-105 blur-0 drop-shadow-lg" 
+                                    "transition-all duration-500 px-4 leading-relaxed tracking-tight",
+                                    isActive
+                                      ? "text-white scale-105 blur-0 drop-shadow-lg"
                                       : "text-white/30 blur-[1.5px] scale-95"
                                  )}
+                                 style={{
+                                   fontSize: `${lyricsFontSize}px`,
+                                   fontWeight: lyricsFontWeight === 'bold' ? 700 : lyricsFontWeight === 'medium' ? 500 : 400,
+                                 }}
                               >
                                  {lyric.text}
                               </p>
@@ -349,7 +359,10 @@ export const PlayerPage = () => {
 
               <div
                 ref={desktopLyricsRef}
-                className="w-full h-full overflow-hidden flex flex-col justify-center text-left pl-4 lg:pl-8"
+                className={cn(
+                  "w-full h-full overflow-hidden flex flex-col justify-center pl-4 lg:pl-8",
+                  lyricsTextAlign ? "text-center" : "text-left"
+                )}
                 style={{ maskImage: 'linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)' }}
               >
                 {lyrics.length > 0 ? (
@@ -367,8 +380,8 @@ export const PlayerPage = () => {
                             key={lyric.originalIndex}
                             layout
                             initial={{ opacity: 0, x: -20 }}
-                            animate={{ 
-                              opacity: isActive ? 1 : 0.3, 
+                            animate={{
+                              opacity: isActive ? 1 : 0.3,
                               x: 0,
                               scale: isActive ? 1 : 0.98,
                               filter: isActive ? 'blur(0px)' : 'blur(1px)'
@@ -376,9 +389,14 @@ export const PlayerPage = () => {
                             exit={{ opacity: 0, x: 20 }}
                             transition={{ type: "spring", stiffness: 300, damping: 30 }}
                             className={cn(
-                              "text-2xl lg:text-3xl xl:text-4xl font-bold transition-colors duration-300 leading-tight tracking-tight origin-left cursor-default",
+                              "transition-colors duration-300 leading-tight tracking-tight cursor-default",
+                              lyricsTextAlign ? "origin-center" : "origin-left",
                               isActive ? "text-white drop-shadow-lg" : "text-white/40 hover:text-white/60"
                             )}
+                            style={{
+                              fontSize: `${Math.round(lyricsFontSize * 1.5)}px`,
+                              fontWeight: lyricsFontWeight === 'bold' ? 700 : lyricsFontWeight === 'medium' ? 500 : 400,
+                            }}
                           >
                             {lyric.text}
                           </motion.p>

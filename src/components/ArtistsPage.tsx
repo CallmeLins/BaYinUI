@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { MoreVertical, Menu } from 'lucide-react';
 import { AlphabetScroller } from './AlphabetScroller';
@@ -6,10 +6,31 @@ import { useMusic } from '../context/MusicContext';
 import { cn } from '../components/ui/utils';
 import { motion } from 'framer-motion';
 
+type ArtistSortOption = 'name' | 'count';
+
 export const ArtistsPage = () => {
   const navigate = useNavigate();
   const { artists, isDarkMode, hasScanned, setMobileSidebarOpen } = useMusic();
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<ArtistSortOption>('name');
+
+  const sortedArtists = useMemo(() => {
+    return [...artists].sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name, 'zh-CN');
+        case 'count':
+          return b.songCount - a.songCount;
+        default:
+          return 0;
+      }
+    });
+  }, [artists, sortBy]);
+
+  const handleSortOption = (option: ArtistSortOption) => {
+    setSortBy(option);
+    setSortMenuOpen(false);
+  };
 
   return (
     <div className="relative pb-20">
@@ -53,9 +74,10 @@ export const ArtistsPage = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {artists.map((artist, index) => (
+            {sortedArtists.map((artist, index) => (
               <motion.div
                 key={artist.id}
+                id={`item-${artist.id}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 30 }}
@@ -89,10 +111,8 @@ export const ArtistsPage = () => {
       </div>
 
       {/* Alphabet scroller */}
-      {hasScanned && artists.length > 0 && (
-        <div className="fixed right-2 top-1/2 -translate-y-1/2 z-20">
-           <AlphabetScroller items={artists.map(a => ({ id: a.id, name: a.name }))} />
-        </div>
+      {hasScanned && sortedArtists.length > 0 && (
+        <AlphabetScroller items={sortedArtists.map(a => ({ id: a.id, name: a.name }))} />
       )}
 
       {/* Sort menu */}
@@ -116,13 +136,21 @@ export const ArtistsPage = () => {
           >
             <h3 className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Sort By</h3>
             <div className="space-y-0.5">
-              {['Name', 'Song Count'].map((option) => (
+              {([
+                { label: 'Name', value: 'name' as ArtistSortOption },
+                { label: 'Song Count', value: 'count' as ArtistSortOption },
+              ]).map((option) => (
                 <button
-                  key={option}
-                  className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-blue-500 hover:text-white transition-colors"
-                  onClick={() => setSortMenuOpen(false)}
+                  key={option.value}
+                  className={cn(
+                    "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors",
+                    sortBy === option.value
+                      ? "bg-blue-500 text-white"
+                      : "hover:bg-blue-500 hover:text-white text-gray-700 dark:text-gray-200"
+                  )}
+                  onClick={() => handleSortOption(option.value)}
                 >
-                  {option}
+                  {option.label}
                 </button>
               ))}
             </div>

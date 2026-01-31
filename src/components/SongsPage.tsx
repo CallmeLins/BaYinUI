@@ -115,17 +115,27 @@ export const SongsPage = () => {
     }
   };
 
+  // Get the field to use for alphabet scrolling based on current sort
+  const getScrollField = (song: Song): string => {
+    switch (sortBy) {
+      case 'artist': return song.artist;
+      case 'album': return song.album;
+      default: return song.title;
+    }
+  };
+
   const scrollToLetter = (letter: string) => {
     let targetSong: Song | undefined;
     if (letter === '0') {
-      targetSong = sortedSongs.find(s => /^[0-9]/.test(s.title));
+      targetSong = sortedSongs.find(s => /^[0-9]/.test(getScrollField(s)));
     } else if (letter === '#') {
-      targetSong = sortedSongs.find(s => !/^[a-zA-Z0-9]/.test(s.title));
+      targetSong = sortedSongs.find(s => !/^[a-zA-Z0-9]/.test(getScrollField(s)));
     } else {
-      targetSong = sortedSongs.find(s => 
-        s.title.toUpperCase().startsWith(letter) || 
-        s.title.toLowerCase().startsWith(letter.toLowerCase())
-      );
+      targetSong = sortedSongs.find(s => {
+        const field = getScrollField(s);
+        return field.toUpperCase().startsWith(letter) ||
+               field.toLowerCase().startsWith(letter.toLowerCase());
+      });
     }
     if (targetSong) {
       const element = document.getElementById(`song-${targetSong.id}`);
@@ -262,12 +272,14 @@ export const SongsPage = () => {
           </div>
         ) : (
           <>
-            <SongList 
-              songs={sortedSongs} 
-              selectionMode={selectionMode}
-              selectedSongs={selectedSongs}
-              onToggleSelection={toggleSongSelection}
-            />
+            <div className="bg-white/50 dark:bg-[#1e1e1e]/50 backdrop-blur-md rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden shadow-sm">
+              <SongList
+                songs={sortedSongs}
+                selectionMode={selectionMode}
+                selectedSongs={selectedSongs}
+                onToggleSelection={toggleSongSelection}
+              />
+            </div>
             
             {/* Alphabet Index */}
             <div

@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
-import { MoreVertical, Plus, Edit2, Trash2, Menu } from 'lucide-react';
+import { MoreVertical, Plus, Edit2, Trash2, Menu, ArrowUpDown } from 'lucide-react';
 import { useMusic } from '../context/MusicContext';
 import { cn } from '../components/ui/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+
+type PlaylistSortOption = 'name' | 'count' | 'recent';
 
 export const PlaylistsPage = () => {
   const navigate = useNavigate();
@@ -14,6 +16,28 @@ export const PlaylistsPage = () => {
   const [selectedPlaylist, setSelectedPlaylist] = useState<string | null>(null);
   const [playlistName, setPlaylistName] = useState('');
   const [menuPlaylistId, setMenuPlaylistId] = useState<string | null>(null);
+  const [sortMenuOpen, setSortMenuOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<PlaylistSortOption>('recent');
+
+  const sortedPlaylists = useMemo(() => {
+    return [...playlists].sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name, 'zh-CN');
+        case 'count':
+          return b.songCount - a.songCount;
+        case 'recent':
+          return 0; // keep original order (most recently created)
+        default:
+          return 0;
+      }
+    });
+  }, [playlists, sortBy]);
+
+  const handleSortOption = (option: PlaylistSortOption) => {
+    setSortBy(option);
+    setSortMenuOpen(false);
+  };
 
   const handleCreate = () => {
     if (playlistName.trim()) {
@@ -69,12 +93,20 @@ export const PlaylistsPage = () => {
           </button>
           <h1 className="text-2xl font-semibold tracking-tight">Playlists</h1>
         </div>
-        <button
-          onClick={() => setShowCreateDialog(true)}
-          className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-        >
-          <Plus className="w-6 h-6" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setSortMenuOpen(true)}
+            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+          >
+            <ArrowUpDown className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setShowCreateDialog(true)}
+            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+          >
+            <Plus className="w-6 h-6" />
+          </button>
+        </div>
       </div>
 
       {/* Main content */}
@@ -91,7 +123,7 @@ export const PlaylistsPage = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-2">
-            {playlists.map((playlist, index) => (
+            {sortedPlaylists.map((playlist, index) => (
               <motion.div
                 key={playlist.id}
                 initial={{ opacity: 0, y: 10 }}
@@ -214,7 +246,7 @@ export const PlaylistsPage = () => {
       {/* Delete Dialog */}
       {showDeleteDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className={cn(
@@ -242,6 +274,50 @@ export const PlaylistsPage = () => {
             </div>
           </motion.div>
         </div>
+      )}
+
+      {/* Sort Menu */}
+      {sortMenuOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm"
+            onClick={() => setSortMenuOpen(false)}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            className={cn(
+              "fixed bottom-24 right-6 w-64 z-50",
+              "bg-white/90 dark:bg-[#323232]/90 backdrop-blur-xl",
+              "rounded-xl shadow-2xl border border-black/5 dark:border-white/10",
+              "p-1.5"
+            )}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Sort By</h3>
+            <div className="space-y-0.5">
+              {([
+                { label: 'Recently Added', value: 'recent' as PlaylistSortOption },
+                { label: 'Name', value: 'name' as PlaylistSortOption },
+                { label: 'Song Count', value: 'count' as PlaylistSortOption },
+              ]).map((option) => (
+                <button
+                  key={option.value}
+                  className={cn(
+                    "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors",
+                    sortBy === option.value
+                      ? "bg-blue-500 text-white"
+                      : "hover:bg-blue-500 hover:text-white text-gray-700 dark:text-gray-200"
+                  )}
+                  onClick={() => handleSortOption(option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        </>
       )}
     </div>
   );

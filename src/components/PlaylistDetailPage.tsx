@@ -52,9 +52,7 @@ export const PlaylistDetailPage = () => {
       </div>
 
       {playlist.songs.length > 0 && (
-         <div className="fixed right-2 top-1/2 -translate-y-1/2 z-20">
-            <AlphabetScroller items={playlist.songs.map(s => ({ id: s.id, name: s.title }))} />
-         </div>
+        <AlphabetScroller items={playlist.songs.map(s => ({ id: s.id, name: s.title }))} />
       )}
     </div>
   );
