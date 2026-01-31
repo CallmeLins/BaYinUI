@@ -182,9 +182,9 @@ export const FolderBrowser = ({ isOpen, onClose, onSelect, initialPath = '/stora
             </div>
 
             {/* Quick Access */}
-            <div className="px-4 py-2 border-t border-black/5 dark:border-white/5 bg-gray-50 dark:bg-white/5">
+            <div className="px-4 py-3 border-t border-black/5 dark:border-white/5 bg-gray-50 dark:bg-white/5">
               <p className="text-xs text-gray-500 mb-2">Quick Access</p>
-              <div className="flex gap-2 overflow-x-auto pb-1">
+              <div className="flex flex-wrap gap-2">
                 {ROOT_PATHS.map((root) => (
                   <button
                     key={root.path}
@@ -192,7 +192,7 @@ export const FolderBrowser = ({ isOpen, onClose, onSelect, initialPath = '/stora
                       setHistory([...history, currentPath]);
                       setCurrentPath(root.path);
                     }}
-                    className="px-3 py-1.5 rounded-full bg-white dark:bg-white/10 text-xs font-medium whitespace-nowrap border border-black/5 dark:border-white/10"
+                    className="px-3 py-2 rounded-full bg-white dark:bg-white/10 text-xs font-medium border border-black/5 dark:border-white/10 leading-normal"
                   >
                     {root.name}
                   </button>

@@ -68,10 +68,6 @@ const MOCK_SONGS: ScannedSong[] = [
 // Android 常用音乐目录
 const ANDROID_MUSIC_DIRECTORIES = [
   '/storage/emulated/0/Music',
-  '/storage/emulated/0/Download',
-  '/storage/emulated/0/DCIM',
-  '/sdcard/Music',
-  '/sdcard/Download',
 ];
 
 /**

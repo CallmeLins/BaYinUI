@@ -64,7 +64,7 @@ export const LicensesPage = () => {
             BaYin is open-source software released under the MIT License.
           </p>
           <a
-            href="https://github.com/CallmeLins"
+            href="https://github.com/CallmeLins/BaYin?tab=Apache-2.0-1-ov-file"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-sm font-medium text-blue-500 hover:underline"

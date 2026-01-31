@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { Menu, Folder, ScanSearch, Loader2, X, Music, Check, AlertCircle, CheckCircle, Cloud, FolderSearch } from 'lucide-react';
+import { Menu, Folder, ScanSearch, Loader2, X, Music, Check, AlertCircle, CheckCircle, Cloud, FolderSearch, Shield } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { FolderBrowser } from './FolderBrowser';
 import { useMusic } from '../context/MusicContext';
@@ -16,6 +16,7 @@ import { cn } from '../components/ui/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const STORAGE_KEY_DIRS = 'bayin_scan_directories';
+const STORAGE_KEY_SONGS = 'bayin_scan_results';
 const NAVIDROME_CONFIG_KEY = 'navidromeConfig' as const;
 
 interface ToastProps {
@@ -31,23 +32,76 @@ const Toast = ({ message, type, onClose }: ToastProps) => {
   }, [onClose]);
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: -20, x: '-50%' }}
       animate={{ opacity: 1, y: 0, x: '-50%' }}
       exit={{ opacity: 0, y: -20, x: '-50%' }}
       className={cn(
-        "fixed top-6 left-1/2 z-50 px-4 py-2.5 rounded-full shadow-lg backdrop-blur-xl border flex items-center gap-2.5",
-        type === 'success' && "bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400",
-        type === 'error' && "bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400",
-        type === 'info' && "bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400",
-        "bg-white/90 dark:bg-[#1e1e1e]/90" // Fallback background
+        "fixed top-10 left-1/2 z-50 shadow-lg backdrop-blur-xl border flex items-center gap-2.5 max-w-[90vw]",
+        // Mobile: wider, more padding; Desktop: rounded pill
+        "px-5 py-3 rounded-2xl",
+        type === 'success' && "bg-green-500/15 border-green-500/20 text-green-700 dark:text-green-400",
+        type === 'error' && "bg-red-500/15 border-red-500/20 text-red-700 dark:text-red-400",
+        type === 'info' && "bg-blue-500/15 border-blue-500/20 text-blue-700 dark:text-blue-400",
+        "bg-white/95 dark:bg-[#1e1e1e]/95"
       )}
     >
-      {type === 'success' && <CheckCircle className="w-4 h-4" />}
-      {type === 'error' && <AlertCircle className="w-4 h-4" />}
-      {type === 'info' && <AlertCircle className="w-4 h-4" />}
+      {type === 'success' && <CheckCircle className="w-5 h-5 flex-shrink-0" />}
+      {type === 'error' && <AlertCircle className="w-5 h-5 flex-shrink-0" />}
+      {type === 'info' && <AlertCircle className="w-5 h-5 flex-shrink-0" />}
       <span className="text-sm font-medium">{message}</span>
     </motion.div>
+  );
+};
+
+/** 权限说明弹窗 */
+const PermissionDialog = ({ isOpen, onConfirm, onCancel }: { isOpen: boolean; onConfirm: () => void; onCancel: () => void }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+        onClick={onCancel}
+      />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="relative w-full max-w-sm bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-2xl overflow-hidden"
+      >
+        <div className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2.5 rounded-xl bg-blue-500/10">
+              <Shield className="w-6 h-6 text-blue-500" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">存储权限说明</h3>
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-2">
+            读取共享存储中的音频文件（不包含对照片、视频的读取，若见系统请求说明中包含，为 Android 12 及以下系统未细分权限故而统一描述），授权后才可获取音频文件信息。
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-500 leading-relaxed">
+            若同意此对话后未见系统授权询问，可能是本软件的此权限被设定为"拒绝并不再提示"，请手动前往系统设置更改。
+          </p>
+        </div>
+        <div className="flex border-t border-black/5 dark:border-white/10">
+          <button
+            onClick={onCancel}
+            className="flex-1 py-3.5 text-sm font-medium text-gray-500 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+          >
+            取消
+          </button>
+          <div className="w-px bg-black/5 dark:bg-white/10" />
+          <button
+            onClick={onConfirm}
+            className="flex-1 py-3.5 text-sm font-semibold text-blue-500 hover:bg-blue-500/5 transition-colors"
+          >
+            同意并继续
+          </button>
+        </div>
+      </motion.div>
+    </div>
   );
 };
 
@@ -70,7 +124,9 @@ export const ScanMusicPage = () => {
   const [androidDirs, setAndroidDirs] = useState<string[]>([]);
   const [navidromeConfig, setNavidromeConfig] = useState<NavidromeConfig | null>(null);
   const [folderBrowserOpen, setFolderBrowserOpen] = useState(false);
+  const [showPermDialog, setShowPermDialog] = useState(false);
 
+  // Load saved directories
   useEffect(() => {
     const savedDirs = localStorage.getItem(STORAGE_KEY_DIRS);
     if (savedDirs) {
@@ -83,6 +139,7 @@ export const ScanMusicPage = () => {
     }
   }, []);
 
+  // Save directories when changed
   useEffect(() => {
     if (selectedDirs.length > 0) {
       localStorage.setItem(STORAGE_KEY_DIRS, JSON.stringify(selectedDirs));
@@ -95,7 +152,6 @@ export const ScanMusicPage = () => {
         const dirs = await getAndroidMusicDirectories();
         setAndroidDirs(dirs);
       }
-      // Load Navidrome config
       const config = await load<NavidromeConfig | null>(NAVIDROME_CONFIG_KEY as never, null);
       setNavidromeConfig(config);
     };
@@ -139,12 +195,113 @@ export const ScanMusicPage = () => {
     }
   };
 
-  const handleScan = async () => {
+  const handleScanClick = async () => {
+    // Android: check permission first, only show dialog if not granted
+    if (platform === 'android') {
+      // 定义 AndroidBridge 类型
+      type AndroidBridgeType = {
+        requestPermission: () => void;
+        checkPermission: () => boolean;
+        openSettings: () => void;
+      };
+
+      // 检查 AndroidBridge 是否可用
+      if (typeof window !== 'undefined' && 'AndroidBridge' in window) {
+        const bridge = (window as unknown as { AndroidBridge: AndroidBridgeType }).AndroidBridge;
+        const hasPermission = bridge.checkPermission();
+        console.log('handleScanClick checkPermission:', hasPermission);
+
+        if (hasPermission) {
+          // 已有权限，直接扫描
+          doScan();
+          return;
+        }
+      }
+      // 没有权限或无法检测，显示权限说明对话框
+      setShowPermDialog(true);
+    } else {
+      doScan();
+    }
+  };
+
+  const handlePermConfirm = async () => {
+    setShowPermDialog(false);
+
+    // 定义 AndroidBridge 类型
+    type AndroidBridgeType = {
+      requestPermission: () => void;
+      checkPermission: () => boolean;
+      openSettings: () => void;
+    };
+
+    // 等待 AndroidBridge 可用（可能有延迟）
+    const waitForBridge = async (maxWait = 3000): Promise<AndroidBridgeType | null> => {
+      const start = Date.now();
+      while (Date.now() - start < maxWait) {
+        if (typeof window !== 'undefined' && 'AndroidBridge' in window) {
+          console.log('AndroidBridge found');
+          return (window as unknown as { AndroidBridge: AndroidBridgeType }).AndroidBridge;
+        }
+        await new Promise(r => setTimeout(r, 100));
+      }
+      console.log('AndroidBridge not found after', maxWait, 'ms');
+      return null;
+    };
+
+    const bridge = await waitForBridge();
+
+    if (bridge) {
+      try {
+        // 检查是否已有权限
+        const hasPermission = bridge.checkPermission();
+        console.log('checkPermission result:', hasPermission);
+
+        if (!hasPermission) {
+          console.log('Requesting permission...');
+          // 请求权限
+          bridge.requestPermission();
+
+          // 等待权限结果
+          const result = await new Promise<boolean>((resolve) => {
+            const handler = (event: Event) => {
+              const customEvent = event as CustomEvent<{ granted: boolean }>;
+              console.log('Permission result received:', customEvent.detail);
+              window.removeEventListener('android-permission-result', handler);
+              resolve(customEvent.detail?.granted ?? false);
+            };
+            window.addEventListener('android-permission-result', handler);
+
+            // 超时保护（30秒）
+            setTimeout(() => {
+              window.removeEventListener('android-permission-result', handler);
+              console.log('Permission request timeout');
+              resolve(false);
+            }, 30000);
+          });
+
+          console.log('Final permission result:', result);
+
+          if (!result) {
+            // 权限被拒绝，提示用户可以去设置中开启
+            showToast('请在系统设置中授予存储权限', 'error');
+            return;
+          }
+        }
+      } catch (e) {
+        console.error('AndroidBridge permission request failed:', e);
+      }
+    } else {
+      console.log('AndroidBridge not available, proceeding anyway');
+    }
+
+    doScan();
+  };
+
+  const doScan = async () => {
     const hasLocalDirs = selectedDirs.length > 0;
     const hasNavidrome = navidromeConfig && navidromeConfig.serverUrl && navidromeConfig.username && navidromeConfig.password;
 
     if (!hasLocalDirs && !hasNavidrome) {
-      // No sources, clear all songs
       setSongs([]);
       setAlbums([]);
       setArtists([]);
@@ -170,7 +327,6 @@ export const ScanMusicPage = () => {
         filePath?: string;
       }> = [];
 
-      // Scan local directories
       if (hasLocalDirs) {
         const localSongs = await scanMusicFiles({
           directories: selectedDirs,
@@ -192,7 +348,6 @@ export const ScanMusicPage = () => {
         }));
       }
 
-      // Fetch from Navidrome
       if (hasNavidrome) {
         const navidromeSongs = await fetchNavidromeSongs(navidromeConfig);
         const convertedNavidromeSongs = navidromeSongs.map((s) => ({
@@ -221,7 +376,6 @@ export const ScanMusicPage = () => {
         } else {
           albumMap.get(song.album)!.count++;
         }
-
         if (!artistMap.has(song.artist)) {
           artistMap.set(song.artist, { name: song.artist, coverUrl: song.coverUrl, count: 1 });
         } else {
@@ -229,26 +383,40 @@ export const ScanMusicPage = () => {
         }
       });
 
-      setAlbums(Array.from(albumMap.entries()).map(([, a], index) => ({
+      const albumsArr = Array.from(albumMap.entries()).map(([, a], index) => ({
         id: `album-${index}`,
         name: a.name,
         artist: a.artist,
         coverUrl: a.coverUrl,
         songCount: a.count,
-      })));
+      }));
 
-      setArtists(Array.from(artistMap.entries()).map(([, a], index) => ({
+      const artistsArr = Array.from(artistMap.entries()).map(([, a], index) => ({
         id: `artist-${index}`,
         name: a.name,
         coverUrl: a.coverUrl,
         songCount: a.count,
-      })));
+      }));
 
+      setAlbums(albumsArr);
+      setArtists(artistsArr);
       setHasScanned(true);
-      showToast(`Successfully scanned ${allSongs.length} songs`, 'success');
+
+      // Persist scan results to localStorage for auto-load next time
+      try {
+        localStorage.setItem(STORAGE_KEY_SONGS, JSON.stringify({
+          songs: allSongs,
+          albums: albumsArr,
+          artists: artistsArr,
+        }));
+      } catch (e) {
+        console.warn('Failed to persist scan results:', e);
+      }
+
+      showToast(`成功扫描到 ${allSongs.length} 首歌曲`, 'success');
       setTimeout(() => navigate('/'), 2000);
     } catch (error) {
-      showToast(`Scan failed: ${error}`, 'error');
+      showToast(`扫描失败: ${error}`, 'error');
     } finally {
       setIsScanning(false);
     }
@@ -268,6 +436,13 @@ export const ScanMusicPage = () => {
         )}
       </AnimatePresence>
 
+      {/* Permission Dialog */}
+      <PermissionDialog
+        isOpen={showPermDialog}
+        onConfirm={handlePermConfirm}
+        onCancel={() => setShowPermDialog(false)}
+      />
+
       {/* Header */}
       <div className={cn(
         "sticky top-0 z-10 -mx-6 px-6 py-4 mb-6 flex items-center justify-between",
@@ -286,7 +461,7 @@ export const ScanMusicPage = () => {
 
       {/* Content */}
       <div className="max-w-2xl mx-auto space-y-6">
-        
+
         {/* Local Folder Section */}
         <section className="bg-white/50 dark:bg-[#1e1e1e]/50 backdrop-blur-md rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
           <div className="p-4 border-b border-black/5 dark:border-white/5 flex items-center gap-3">
@@ -298,7 +473,7 @@ export const ScanMusicPage = () => {
               <p className="text-xs text-gray-500 dark:text-gray-400">Select folders to scan for music files</p>
             </div>
           </div>
-          
+
           <div className="p-4 space-y-3">
             {/* Android Presets */}
             {isAndroid && androidDirs.length > 0 && (
@@ -405,7 +580,7 @@ export const ScanMusicPage = () => {
 
         {/* Scan Button */}
         <button
-          onClick={handleScan}
+          onClick={handleScanClick}
           disabled={isScanning}
           className={cn(
             "w-full py-4 rounded-2xl font-semibold text-white shadow-lg transition-all active:scale-[0.98]",

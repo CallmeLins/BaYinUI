@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
 import * as audioService from '../services/audio';
+
+const STORAGE_KEY_SONGS = 'bayin_scan_results';
 
 export interface Song {
   id: string;
@@ -102,7 +104,8 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgressState] = useState(0);
   const [duration, setDuration] = useState(0);
-  
+  const initRef = useRef(false);
+
   // Initialize dark mode from localStorage or system preference
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -140,7 +143,29 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
     return false;
   });
 
-  // Apply dark mode class to html element
+  // Auto-load saved scan results on startup
+  useEffect(() => {
+    if (initRef.current) return;
+    initRef.current = true;
+
+    try {
+      const savedData = localStorage.getItem(STORAGE_KEY_SONGS);
+      if (savedData) {
+        const { songs: savedSongs, albums: savedAlbums, artists: savedArtists } = JSON.parse(savedData);
+        if (Array.isArray(savedSongs) && savedSongs.length > 0) {
+          setSongs(savedSongs);
+          if (Array.isArray(savedAlbums)) setAlbums(savedAlbums);
+          if (Array.isArray(savedArtists)) setArtists(savedArtists);
+          setHasScanned(true);
+          console.log('Loaded', savedSongs.length, 'songs from cache');
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load saved scan results:', e);
+    }
+  }, []);
+
+  // Apply dark mode class to html element and notify Android
   useEffect(() => {
     const root = window.document.documentElement;
     if (isDarkMode) {
@@ -149,6 +174,15 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
     } else {
       root.classList.remove('dark');
       localStorage.setItem('bayin_theme', 'light');
+    }
+
+    // 通知 Android 更新状态栏图标颜色
+    if (typeof window !== 'undefined' && 'AndroidBridge' in window) {
+      try {
+        (window as unknown as { AndroidBridge: { setTheme: (isDark: boolean) => void } }).AndroidBridge.setTheme(isDarkMode);
+      } catch (e) {
+        console.log('AndroidBridge.setTheme failed:', e);
+      }
     }
   }, [isDarkMode]);
 

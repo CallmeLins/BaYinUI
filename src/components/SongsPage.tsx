@@ -1,7 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { Search, Shuffle, ArrowUpDown, CheckSquare, Trash2, ListPlus, Play, X, MoreVertical, Menu } from 'lucide-react';
-import { SongList } from './SongList';
+import { SongList, findSongIndexByLetter } from './SongList';
 import { useMusic } from '../context/MusicContext';
 import { Song } from '../context/MusicContext';
 import { cn } from '../components/ui/utils';
@@ -28,9 +28,10 @@ export const SongsPage = () => {
   const alphabetIndex = ['0', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '#'];
   const [activeIndex, setActiveIndex] = useState<string | null>(null);
   const indexBarRef = useRef<HTMLDivElement>(null);
+  const [scrollToIndex, setScrollToIndex] = useState<number | undefined>(undefined);
 
-  // Sorting Logic
-  const sortedSongs = [...songs].sort((a, b) => {
+  // Sorting Logic (memoized to avoid re-sorting on every render)
+  const sortedSongs = useMemo(() => [...songs].sort((a, b) => {
     switch (sortBy) {
       case 'title': return a.title.localeCompare(b.title, 'zh-CN');
       case 'artist': return a.artist.localeCompare(b.artist, 'zh-CN');
@@ -40,7 +41,7 @@ export const SongsPage = () => {
       case 'date': return parseInt(b.id) - parseInt(a.id);
       default: return 0;
     }
-  });
+  }), [songs, sortBy]);
 
   const handleSortOption = (option: SortOption) => {
     setSortBy(option);
@@ -115,33 +116,10 @@ export const SongsPage = () => {
     }
   };
 
-  // Get the field to use for alphabet scrolling based on current sort
-  const getScrollField = (song: Song): string => {
-    switch (sortBy) {
-      case 'artist': return song.artist;
-      case 'album': return song.album;
-      default: return song.title;
-    }
-  };
-
   const scrollToLetter = (letter: string) => {
-    let targetSong: Song | undefined;
-    if (letter === '0') {
-      targetSong = sortedSongs.find(s => /^[0-9]/.test(getScrollField(s)));
-    } else if (letter === '#') {
-      targetSong = sortedSongs.find(s => !/^[a-zA-Z0-9]/.test(getScrollField(s)));
-    } else {
-      targetSong = sortedSongs.find(s => {
-        const field = getScrollField(s);
-        return field.toUpperCase().startsWith(letter) ||
-               field.toLowerCase().startsWith(letter.toLowerCase());
-      });
-    }
-    if (targetSong) {
-      const element = document.getElementById(`song-${targetSong.id}`);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+    const idx = findSongIndexByLetter(sortedSongs, letter, sortBy);
+    if (idx >= 0) {
+      setScrollToIndex(idx);
     }
   };
 
@@ -278,6 +256,7 @@ export const SongsPage = () => {
                 selectionMode={selectionMode}
                 selectedSongs={selectedSongs}
                 onToggleSelection={toggleSongSelection}
+                scrollToIndex={scrollToIndex}
               />
             </div>
             
